@@ -48,8 +48,6 @@ const Home = () => {
 
   const videoSingleListener = (event: any) => {
     const [videoWidth, videoHeight] = measureVideoNode(event.target);
-    // console.log('videoSingleListener', videoWidth, videoHeight, videoList[0]);
-    // Call a main render process, passing the url
     ipcRenderer.send('playVideoSingle', {
       width: videoWidth,
       height: videoHeight,
@@ -58,8 +56,7 @@ const Home = () => {
   };
 
   const postPlaylist = async () => {
-    console.log('postPlaylist', videoList);
-    const response = await fetch(`${SERVED_PATH}/playlist`, {
+    const response = await fetch(`${SERVED_PATH}/videoPlaylist`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -69,14 +66,14 @@ const Home = () => {
     return response.json();
   };
 
-  const videoMultiListener = (event: any) => {
+  const videoMultiListener = async (event: any) => {
     const [videoWidth, videoHeight] = measureVideoNode(event.target);
-    // console.log('videoMultiListener', videoWidth, videoHeight, videoList);
-    postPlaylist();
+    const { filename } = await postPlaylist();
     ipcRenderer.send('playVideoMulti', {
       width: videoWidth,
       height: videoHeight,
       videos: videoList,
+      list: filename,
     });
   };
 
@@ -103,7 +100,6 @@ const Home = () => {
   };
 
   useEffect(() => {
-    console.log('useEffect', videoList);
     if (videoList.length === 1) playVideo();
     if (videoList.length > 1) playVideos();
   }, [videoList]);

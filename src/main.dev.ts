@@ -8,14 +8,37 @@
  * When running `yarn build` or `yarn build:main`, this file is compiled to
  * `./src/main.prod.js` using webpack. This gives us some performance wins.
  */
-import 'core-js/stable';
-import 'regenerator-runtime/runtime';
+
 import fs from 'fs';
 import path from 'path';
+import 'core-js/stable';
+import 'regenerator-runtime/runtime';
 import { app, BrowserWindow, ipcMain, IpcMainEvent, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
+
+// Create playlists directory if one doesn't already exist
+const PLAYLIST_ROOT = path.resolve(__dirname, 'playlists');
+if (!fs.existsSync(PLAYLIST_ROOT)) fs.mkdirSync(PLAYLIST_ROOT);
+
+const IMAGE_PLAYLIST = path.resolve(PLAYLIST_ROOT, 'images');
+if (!fs.existsSync(IMAGE_PLAYLIST)) fs.mkdirSync(IMAGE_PLAYLIST);
+
+const VIDEO_PLAYLIST = path.resolve(PLAYLIST_ROOT, 'videos');
+if (!fs.existsSync(VIDEO_PLAYLIST)) fs.mkdirSync(VIDEO_PLAYLIST);
+
+// Keep track of all the playlits in an array of timestamped files
+let videoPlaylists: string[]; // <-- Wait until boot up to load playlists
+const getAllVideoPlaylists = (): string[] => {
+  let playlistArray: string[] = [];
+  try {
+    playlistArray = fs.readdirSync(VIDEO_PLAYLIST);
+  } catch (err) {
+    console.error('getAllVideoPlaylists', err);
+  }
+  return playlistArray;
+};
 
 // Serves files in the /User/ folder
 const HOME = app.getPath('home');
@@ -31,15 +54,18 @@ server.use(
   })
 );
 
-// :TODO:: Save the playlist to database
-server.post('/playlist', (request: any, response: any) => {
+// :TODO:: Save playlists to the playlist folders
+server.post('/videoPlaylist', async (request: any, response: any) => {
   // console.log('POST /playlist', request.body);
   // :TODO:: Save unique playlist and return it to the client
+  const timestamp = Date.now();
+  const filename = `${timestamp}.json`;
   fs.writeFileSync(
-    path.resolve(__dirname, 'playlist.json'),
+    path.resolve(VIDEO_PLAYLIST, filename),
     JSON.stringify(request.body)
   );
-  response.json({ success: true });
+  videoPlaylists = getAllVideoPlaylists();
+  response.json({ filename, playlists: videoPlaylists, success: true });
 });
 
 server.listen(8080, '127.0.0.1', () => {
@@ -139,28 +165,43 @@ const createWindow = async () => {
   );
 
   interface VideoMulti {
+    list: string;
     width: number;
     height: number;
     videos: string[];
   }
 
-  let count = 0;
-  const multiWindows: BrowserWindow[] = [];
-
   ipcMain.on(
     'playVideoMulti',
-    (_: IpcMainEvent, { width, height, videos }: VideoMulti) => {
-      // console.log('playVideoMulti', width, height, videos);
-      multiWindows[count] = new BrowserWindow({
+    (_: IpcMainEvent, { width, height, videos, list }: VideoMulti) => {
+      console.log('playVideoMulti', width, height, videos);
+      if (singleWindows[list] !== undefined) singleWindows[list].close();
+      singleWindows[list] = new BrowserWindow({
         width,
         height,
         webPreferences: { devTools: false },
       });
       const videolist = videos.map((url) => url).join(':');
-      multiWindows[count].loadURL(
-        `file://${__dirname}/videoMulti.html?urls=${videolist}`
+      singleWindows[list].loadURL(
+        `file://${__dirname}/videoMulti.html?urls=${videolist}&list=${list}`
       );
-      count += 1;
+      singleWindows[list].focus();
+      singleWindows[list].on('close', () => {
+        delete singleWindows[list];
+      });
+    }
+  );
+
+  interface ImageMulti {
+    width: number;
+    height: number;
+    images: string[];
+  }
+
+  ipcMain.on(
+    'playImagesMulti',
+    (_: IpcMainEvent, { width, height, videos }: VideoMulti) => {
+      // console.log('playImagesMulti', width, height, videos);
     }
   );
 

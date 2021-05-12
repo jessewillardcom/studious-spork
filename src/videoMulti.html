@@ -37,13 +37,18 @@
     </div>
     <script>
       var index = 0;
-      var videoPath = window.location.href.split('?')[1].split('urls=')[1]
+      var SERVER = 'http://localhost:8080';
+      var queryStr = new URLSearchParams(window.location.search);
+      var videoPath = queryStr.get('urls');
       var videoList = videoPath.split(':');
+      var videoFile = queryStr.get('file');
+      // TODO:: Add an endpoint to server the playlist
+      //fetch(`${SERVER}/videoPlaylist/${videoFile}`)
       document.title = videoPath;
 
       // Setup video player handlers
-      var videoElement = document.querySelector('video');  
-      videoElement.setAttribute('src', `http://localhost:8080${videoList[index]}`);
+      var videoElement = document.querySelector('video');
+      videoElement.setAttribute('src', `${SERVER}${videoList[index]}`);
       videoElement.addEventListener('ended', () => {
         console.log('ended');
         nextVideo()
@@ -53,7 +58,7 @@
       function nextVideo() {
         index = (index === videoList.length - 1) ? 0 : index + 1;
         console.log('nextVideo', index, videoList[index]);
-        videoElement.setAttribute('src', `http://localhost:8080${videoList[index]}`);
+        videoElement.setAttribute('src', `${SERVER}${videoList[index]}`);
       };
     </script>
   </body>
