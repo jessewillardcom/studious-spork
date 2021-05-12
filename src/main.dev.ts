@@ -15,33 +15,38 @@ import path from 'path';
 import { app, BrowserWindow, ipcMain, IpcMainEvent, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
-import MenuBuilder from './menu';;
+import MenuBuilder from './menu';
 
-// File server built in
-const HOME_PATH = app.getPath('home');
-var bodyParser = require('body-parser')
-var express = require("express");
-var server = express();
-server.use('/', express.static(HOME_PATH));
+// Serves files in the /User/ folder
+const HOME = app.getPath('home');
+const express = require('express');
+const bodyParser = require('body-parser');
+
+const server = express();
+server.use('/', express.static(HOME));
 server.use(bodyParser.json());
-server.use(bodyParser.urlencoded({
-  extended: true
-}));
+server.use(
+  bodyParser.urlencoded({
+    extended: true,
+  })
+);
 
-//:TODO:: Save the playlist to database
+// :TODO:: Save the playlist to database
 server.post('/playlist', (request: any, response: any) => {
-  console.log('POST /playlist', request.body);
-  //:TODO:: Save unique playlist and return it to the client
-  fs.writeFileSync(path.resolve(__dirname, 'playlist.json'), JSON.stringify(request.body) );
-  response.json({ success: true});
+  // console.log('POST /playlist', request.body);
+  // :TODO:: Save unique playlist and return it to the client
+  fs.writeFileSync(
+    path.resolve(__dirname, 'playlist.json'),
+    JSON.stringify(request.body)
+  );
+  response.json({ success: true });
 });
 
-server.listen(8080, '127.0.0.1', function(){
-  console.log(">>> Web server started >>", HOME_PATH);
+server.listen(8080, '127.0.0.1', () => {
+  console.log('>>> Web server started >>', HOME);
 });
-//:TODO:: Allow served folder to be changed
-//server.close() //<---Shut down then restart server
-
+// :TODO:: Allow served folder to be changed
+// server.close() //<---Shut down then restart server
 
 export default class AppUpdater {
   constructor() {
@@ -104,9 +109,9 @@ const createWindow = async () => {
     },
   });
 
-  mainWindow.loadURL(`file://${__dirname}/index.html?home=${HOME_PATH}`);
+  mainWindow.loadURL(`file://${__dirname}/index.html?home=${HOME}`);
 
-  let singleWindows: Record<string, BrowserWindow> = {};
+  const singleWindows: Record<string, BrowserWindow> = {};
 
   interface VideoSingle {
     width: number;
@@ -114,15 +119,24 @@ const createWindow = async () => {
     video: string;
   }
 
-  ipcMain.on('playVideoSingle', (_: IpcMainEvent, { width, height, video }: VideoSingle  ) => {
-    if ( singleWindows[video] !== undefined ) singleWindows[video].close()
-    singleWindows[video] = new BrowserWindow({ width, height, webPreferences: { devTools: false } });
-    singleWindows[video].loadURL(`file://${__dirname}/videoSingle.html?url=${video}`);
-    singleWindows[video].focus();
-    singleWindows[video].on('close', function() {
-      delete singleWindows[video];
-    });
-  });
+  ipcMain.on(
+    'playVideoSingle',
+    (_: IpcMainEvent, { width, height, video }: VideoSingle) => {
+      if (singleWindows[video] !== undefined) singleWindows[video].close();
+      singleWindows[video] = new BrowserWindow({
+        width,
+        height,
+        webPreferences: { devTools: false },
+      });
+      singleWindows[video].loadURL(
+        `file://${__dirname}/videoSingle.html?url=${video}`
+      );
+      singleWindows[video].focus();
+      singleWindows[video].on('close', () => {
+        delete singleWindows[video];
+      });
+    }
+  );
 
   interface VideoMulti {
     width: number;
@@ -131,16 +145,24 @@ const createWindow = async () => {
   }
 
   let count = 0;
-  let multiWindows: BrowserWindow[] = [];
+  const multiWindows: BrowserWindow[] = [];
 
-  ipcMain.on('playVideoMulti', (_: IpcMainEvent, { width, height, videos }: VideoMulti  ) => {
-    console.log('playVideoMulti', width, height, videos);
-    multiWindows[count] = new BrowserWindow({ width, height, webPreferences: { devTools: false } });
-    const videolist = videos.map((url)=> url).join(':');
-    multiWindows[count].loadURL(`file://${__dirname}/videoMulti.html?urls=${videolist}`);
-    count++;
-  });
-
+  ipcMain.on(
+    'playVideoMulti',
+    (_: IpcMainEvent, { width, height, videos }: VideoMulti) => {
+      // console.log('playVideoMulti', width, height, videos);
+      multiWindows[count] = new BrowserWindow({
+        width,
+        height,
+        webPreferences: { devTools: false },
+      });
+      const videolist = videos.map((url) => url).join(':');
+      multiWindows[count].loadURL(
+        `file://${__dirname}/videoMulti.html?urls=${videolist}`
+      );
+      count += 1;
+    }
+  );
 
   // @TODO: Use 'ready-to-show' event
   //        https://github.com/electron/electron/blob/master/docs/api/browser-window.md#using-ready-to-show-event

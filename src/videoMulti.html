@@ -33,16 +33,28 @@
   </style>
   <body>
     <div id="container" >
-      <video id="videoPlayer" autoplay controls loop muted></video>
+      <video id="videoPlayer" autoplay controls muted></video>
     </div>
     <script>
-      var videoElement = document.querySelector('video');
+      var index = 0;
       var videoPath = window.location.href.split('?')[1].split('urls=')[1]
       var videoList = videoPath.split(':');
-      var videoPath = videoList[0];
-      videoElement.setAttribute('src', `http://localhost:8080${videoPath}`);
-      var segments = videoPath.split('/');
-      document.title = videoList.join(':');
+      document.title = videoPath;
+
+      // Setup video player handlers
+      var videoElement = document.querySelector('video');  
+      videoElement.setAttribute('src', `http://localhost:8080${videoList[index]}`);
+      videoElement.addEventListener('ended', () => {
+        console.log('ended');
+        nextVideo()
+      });
+
+      // When the previous video ends play first video, start again
+      function nextVideo() {
+        index = (index === videoList.length - 1) ? 0 : index + 1;
+        console.log('nextVideo', index, videoList[index]);
+        videoElement.setAttribute('src', `http://localhost:8080${videoList[index]}`);
+      };
     </script>
   </body>
 </html>
