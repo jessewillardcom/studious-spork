@@ -24,6 +24,7 @@ const Home = () => {
     return localPath?.split(USER_FOLDER)[1];
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const changeFiles = (event: any) => {
     const fileSet = event?.target?.files;
     if (fileSet.length === 1) {
@@ -46,6 +47,7 @@ const Home = () => {
     return [videoWidth, videoHeight];
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const videoSingleListener = (event: any) => {
     const [videoWidth, videoHeight] = measureVideoNode(event.target);
     ipcRenderer.send('playVideoSingle', {
@@ -56,24 +58,29 @@ const Home = () => {
   };
 
   const postPlaylist = async () => {
+    const request = {
+      list: videoList,
+      save: false,
+      title: '',
+    };
     const response = await fetch(`${SERVED_PATH}/videoPlaylist`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(videoList),
+      body: JSON.stringify(request),
     });
     return response.json();
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const videoMultiListener = async (event: any) => {
     const [videoWidth, videoHeight] = measureVideoNode(event.target);
-    const { filename } = await postPlaylist();
+    const { timestamp } = await postPlaylist();
     ipcRenderer.send('playVideoMulti', {
+      list: timestamp,
       width: videoWidth,
       height: videoHeight,
-      videos: videoList,
-      list: filename,
     });
   };
 
@@ -102,6 +109,7 @@ const Home = () => {
   useEffect(() => {
     if (videoList.length === 1) playVideo();
     if (videoList.length > 1) playVideos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoList]);
 
   return (

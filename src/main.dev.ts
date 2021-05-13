@@ -16,6 +16,13 @@ import 'regenerator-runtime/runtime';
 import { app, BrowserWindow, ipcMain, IpcMainEvent, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+
+import {
+  CreateMediaPlayer,
+  MultimediaPlaylists,
+  PostedVideoPlaylist,
+  SingleVideoPlayer,
+} from './main/main.interface';
 import MenuBuilder from './menu';
 
 // Create playlists directory if one doesn't already exist
@@ -29,8 +36,8 @@ const VIDEO_PLAYLIST = path.resolve(PLAYLIST_ROOT, 'videos');
 if (!fs.existsSync(VIDEO_PLAYLIST)) fs.mkdirSync(VIDEO_PLAYLIST);
 
 // Keep track of all the playlits in an array of timestamped files
-let videoPlaylists: string[]; // <-- Wait until boot up to load playlists
-const getAllVideoPlaylists = (): string[] => {
+let savedVideoPlaylists: string[]; // <-- Wait until boot up to load playlists
+const allSavedVideoPlaylists = (): string[] => {
   let playlistArray: string[] = [];
   try {
     playlistArray = fs.readdirSync(VIDEO_PLAYLIST);
@@ -54,18 +61,50 @@ server.use(
   })
 );
 
-// :TODO:: Save playlists to the playlist folders
-server.post('/videoPlaylist', async (request: any, response: any) => {
-  // console.log('POST /playlist', request.body);
-  // :TODO:: Save unique playlist and return it to the client
-  const timestamp = Date.now();
-  const filename = `${timestamp}.json`;
+// In memory, rather than persist every played list to disk
+const playlistTable: MultimediaPlaylists = {
+  images: {},
+  videos: {},
+};
+
+const saveVideoPlaylist = (passedKey: number) => {
+  const filename = `${passedKey}.json`;
   fs.writeFileSync(
     path.resolve(VIDEO_PLAYLIST, filename),
-    JSON.stringify(request.body)
+    JSON.stringify(playlistTable.videos[passedKey])
   );
-  videoPlaylists = getAllVideoPlaylists();
-  response.json({ filename, playlists: videoPlaylists, success: true });
+};
+
+const tracePlaylist = () => {
+  Object.keys(playlistTable.videos).forEach((timestamp) => {
+    console.log(playlistTable.videos[timestamp]);
+  });
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+server.get('/videoPlaylist/:key', async (request: any, response: any) => {
+  const { key } = request.params;
+  console.log('/videoPlaylist/:key', key);
+  response.json(playlistTable.videos[key].list);
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+server.post('/videoPlaylist', async (request: any, response: any) => {
+  // console.log('POST /playlist', request.body);
+  const timestamp = Date.now();
+  const { list, save, title }: PostedVideoPlaylist = request.body;
+  playlistTable.videos[timestamp] = {
+    list,
+    title,
+  };
+  if (save === true) saveVideoPlaylist(timestamp);
+  savedVideoPlaylists = allSavedVideoPlaylists();
+  tracePlaylist();
+  response.json({
+    saved: savedVideoPlaylists,
+    success: true,
+    timestamp,
+  });
 });
 
 server.listen(8080, '127.0.0.1', () => {
@@ -139,15 +178,9 @@ const createWindow = async () => {
 
   const singleWindows: Record<string, BrowserWindow> = {};
 
-  interface VideoSingle {
-    width: number;
-    height: number;
-    video: string;
-  }
-
   ipcMain.on(
     'playVideoSingle',
-    (_: IpcMainEvent, { width, height, video }: VideoSingle) => {
+    (_: IpcMainEvent, { width, height, video }: SingleVideoPlayer) => {
       if (singleWindows[video] !== undefined) singleWindows[video].close();
       singleWindows[video] = new BrowserWindow({
         width,
@@ -164,26 +197,18 @@ const createWindow = async () => {
     }
   );
 
-  interface VideoMulti {
-    list: string;
-    width: number;
-    height: number;
-    videos: string[];
-  }
-
   ipcMain.on(
     'playVideoMulti',
-    (_: IpcMainEvent, { width, height, videos, list }: VideoMulti) => {
-      console.log('playVideoMulti', width, height, videos);
+    (_: IpcMainEvent, { list, width, height }: CreateMediaPlayer) => {
+      console.log('playVideoMulti', width, height, list);
       if (singleWindows[list] !== undefined) singleWindows[list].close();
       singleWindows[list] = new BrowserWindow({
         width,
         height,
         webPreferences: { devTools: false },
       });
-      const videolist = videos.map((url) => url).join(':');
       singleWindows[list].loadURL(
-        `file://${__dirname}/videoMulti.html?urls=${videolist}&list=${list}`
+        `file://${__dirname}/videoMulti.html?file=${list}`
       );
       singleWindows[list].focus();
       singleWindows[list].on('close', () => {
@@ -191,20 +216,15 @@ const createWindow = async () => {
       });
     }
   );
-
-  interface ImageMulti {
-    width: number;
-    height: number;
-    images: string[];
-  }
-
+  /*
   ipcMain.on(
     'playImagesMulti',
-    (_: IpcMainEvent, { width, height, videos }: VideoMulti) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    (_: IpcMainEvent, { list, width, height }: CreateMediaPlayer) => {
       // console.log('playImagesMulti', width, height, videos);
     }
   );
-
+  */
   // @TODO: Use 'ready-to-show' event
   //        https://github.com/electron/electron/blob/master/docs/api/browser-window.md#using-ready-to-show-event
   mainWindow.webContents.on('did-finish-load', () => {
