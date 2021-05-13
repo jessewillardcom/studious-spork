@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint global-require: off, no-console: off */
 
 /**
@@ -178,6 +179,10 @@ const createWindow = async () => {
 
   const singleWindows: Record<string, BrowserWindow> = {};
 
+  ipcMain.on('closeWindow', (_: IpcMainEvent, key: string) => {
+    singleWindows[key].close();
+  });
+
   ipcMain.on(
     'playVideoSingle',
     (_: IpcMainEvent, { width, height, video }: SingleVideoPlayer) => {
@@ -185,10 +190,14 @@ const createWindow = async () => {
       singleWindows[video] = new BrowserWindow({
         width,
         height,
-        webPreferences: { devTools: false },
+        frame: false,
+        webPreferences: {
+          devTools: false,
+          nodeIntegration: true,
+        },
       });
       singleWindows[video].loadURL(
-        `file://${__dirname}/videoSingle.html?url=${video}`
+        `file://${__dirname}/index.html?view=VideoSingle&video=${video}`
       );
       singleWindows[video].focus();
       singleWindows[video].on('close', () => {
@@ -205,10 +214,14 @@ const createWindow = async () => {
       singleWindows[list] = new BrowserWindow({
         width,
         height,
-        webPreferences: { devTools: false },
+        frame: false,
+        webPreferences: {
+          devTools: false,
+          nodeIntegration: true,
+        },
       });
       singleWindows[list].loadURL(
-        `file://${__dirname}/videoMulti.html?file=${list}`
+        `file://${__dirname}/index.html?view=VideoMulti&list=${list}`
       );
       singleWindows[list].focus();
       singleWindows[list].on('close', () => {

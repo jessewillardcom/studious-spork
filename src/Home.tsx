@@ -7,7 +7,7 @@ const QUERY_STRING = new URLSearchParams(window.location.search);
 const USER_FOLDER = QUERY_STRING.get('home') ?? '';
 const SERVED_PATH = 'http://localhost:8080';
 
-const Home = () => {
+const MultiMedia = () => {
   const filePicker = useRef<HTMLInputElement | never>(null);
   const videoContainer = useRef<HTMLDivElement | never>(null);
   const [videoList, setVideoList] = useState<string[] | never[]>([]);
@@ -114,9 +114,7 @@ const Home = () => {
 
   return (
     <>
-      <div id="headerContainer" />
-      <div id="videoContainer" ref={videoContainer} />
-      <div id="footerContainer">
+      <div id="headerContainer">
         <button type="button" onClick={selectFiles}>
           Video Playlist
         </button>
@@ -128,15 +126,17 @@ const Home = () => {
           type="file"
         />
       </div>
+      <div id="videoHidden" ref={videoContainer} />
+      <div id="footerContainer" />
     </>
   );
 };
 // https://electron-react-boilerplate.js.org/
-export default function App() {
+export default function Home() {
   return (
     <Router>
       <Switch>
-        <Route path="/" component={Home} />
+        <Route path="/" component={MultiMedia} />
       </Switch>
     </Router>
   );
