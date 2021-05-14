@@ -29,18 +29,19 @@ import MenuBuilder from './menu';
 
 // Create playlists directory if one doesn't already exist
 const PLAYLIST_ROOT = path.resolve(__dirname, 'playlists');
-if (!fs.existsSync(PLAYLIST_ROOT)) fs.mkdirSync(PLAYLIST_ROOT);
+// if (!fs.existsSync(PLAYLIST_ROOT)) fs.mkdirSync(PLAYLIST_ROOT);
 
 const IMAGE_PLAYLIST = path.resolve(PLAYLIST_ROOT, 'images');
-if (!fs.existsSync(IMAGE_PLAYLIST)) fs.mkdirSync(IMAGE_PLAYLIST);
+// if (!fs.existsSync(IMAGE_PLAYLIST)) fs.mkdirSync(IMAGE_PLAYLIST);
 
 const VIDEO_PLAYLIST = path.resolve(PLAYLIST_ROOT, 'videos');
-if (!fs.existsSync(VIDEO_PLAYLIST)) fs.mkdirSync(VIDEO_PLAYLIST);
+// if (!fs.existsSync(VIDEO_PLAYLIST)) fs.mkdirSync(VIDEO_PLAYLIST);
 
 // <-- Wait until boot up to load playlists
 // Keep track of all the playlits in an array of timestamped files
 let savedImagePlaylists: string[];
 let savedVideoPlaylists: string[];
+/*
 const allSavedVideoPlaylists = (): string[] => {
   let playlistArray: string[] = [];
   try {
@@ -50,7 +51,7 @@ const allSavedVideoPlaylists = (): string[] => {
   }
   return playlistArray;
 };
-
+*/
 // Serves files in the /User/ folder
 const HOME = app.getPath('home');
 const express = require('express');
@@ -90,13 +91,13 @@ const saveImagePlaylist = (passedKey: number) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 server.get('/imagePlaylist/:key', async (request: any, response: any) => {
   const { key } = request.params;
-  console.log('/imagePlaylist/:key', key);
+  // console.log('/imagePlaylist/:key', key);
   response.json(playlistTable.images[key].list);
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 server.post('/imagePlaylist', async (request: any, response: any) => {
-  console.log('POST /imagePlaylist', request.body);
+  // console.log('POST /imagePlaylist', request.body);
   const timestamp = Date.now();
   const { list, save, title }: HttpPostPlaylist = request.body;
   playlistTable.images[timestamp] = {
@@ -104,10 +105,10 @@ server.post('/imagePlaylist', async (request: any, response: any) => {
     title,
   };
   if (save === true) saveImagePlaylist(timestamp);
-  savedImagePlaylists = allSavedVideoPlaylists();
-  tracePlaylist();
+  // savedImagePlaylists = allSavedVideoPlaylists();
+  // tracePlaylist();
   response.json({
-    saved: savedImagePlaylists,
+    saved: [],
     success: true,
     timestamp,
   });
@@ -124,13 +125,12 @@ const saveVideoPlaylist = (passedKey: number) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 server.get('/videoPlaylist/:key', async (request: any, response: any) => {
   const { key } = request.params;
-  console.log('/videoPlaylist/:key', key);
+  // console.log('/videoPlaylist/:key', key);
   response.json(playlistTable.videos[key].list);
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 server.post('/videoPlaylist', async (request: any, response: any) => {
-  // console.log('POST /playlist', request.body);
   const timestamp = Date.now();
   const { list, save, title }: HttpPostPlaylist = request.body;
   playlistTable.videos[timestamp] = {
@@ -138,10 +138,10 @@ server.post('/videoPlaylist', async (request: any, response: any) => {
     title,
   };
   if (save === true) saveVideoPlaylist(timestamp);
-  savedVideoPlaylists = allSavedVideoPlaylists();
-  tracePlaylist();
+  // savedVideoPlaylists = allSavedVideoPlaylists();
+  // tracePlaylist();
   response.json({
-    saved: savedVideoPlaylists,
+    saved: [],
     success: true,
     timestamp,
   });
@@ -229,9 +229,9 @@ const createWindow = async () => {
       singleWindows[list] = new BrowserWindow({
         width,
         height,
-        frame: true,
+        frame: false,
         webPreferences: {
-          devTools: true,
+          devTools: false,
           nodeIntegration: true,
         },
       });
@@ -271,7 +271,6 @@ const createWindow = async () => {
   ipcMain.on(
     'playVideoMulti',
     (_: IpcMainEvent, { list, width, height }: MultiVideoPlayer) => {
-      console.log('playVideoMulti', width, height, list);
       if (singleWindows[list] !== undefined) singleWindows[list].close();
       singleWindows[list] = new BrowserWindow({
         width,

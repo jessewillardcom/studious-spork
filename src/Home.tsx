@@ -79,12 +79,18 @@ const MultiMedia = () => {
     });
   };
 
-  const replaceImageNode = (passedImageNode: HTMLImageElement) => {
+  const removeImageNodes = () => {
     const imageElement = imageContainer.current;
     while (imageElement?.firstChild) {
+      imageElement.removeEventListener('load', slideshowListener);
       imageElement.removeChild(imageElement.firstChild);
     } // Removes all child nodes then appends new video node
-    imageElement?.appendChild(passedImageNode);
+    return imageElement;
+  };
+
+  const replaceImageNode = (passedImageNode: HTMLImageElement) => {
+    const parentElement = removeImageNodes();
+    parentElement?.appendChild(passedImageNode);
   };
 
   const playImages = () => {
@@ -129,12 +135,19 @@ const MultiMedia = () => {
     });
   };
 
-  const replaceVideoNode = (passedVideoNode: HTMLVideoElement) => {
+  const removeVideoNodes = () => {
     const videoElement = videoContainer.current;
     while (videoElement?.firstChild) {
+      videoElement.removeEventListener('canplay', videoMultiListener);
+      videoElement.removeEventListener('canplay', videoSingleListener);
       videoElement.removeChild(videoElement.firstChild);
     } // Removes all child nodes then appends new video node
-    videoElement?.appendChild(passedVideoNode);
+    return videoElement;
+  };
+
+  const replaceVideoNode = (passedVideoNode: HTMLVideoElement) => {
+    const parentElement = removeVideoNodes();
+    parentElement?.appendChild(passedVideoNode);
   };
 
   const playVideo = () => {
@@ -156,6 +169,14 @@ const MultiMedia = () => {
     if (videoList.length > 1) playVideos();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoList]);
+
+  useEffect(() => {
+    return () => {
+      removeImageNodes();
+      removeVideoNodes();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>

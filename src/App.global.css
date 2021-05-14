@@ -71,6 +71,7 @@ a:hover {
   display: flex;
   align-items: center;
   flex-direction: column;
+  overflow: hidden;
 }
 
 #headerContainer {
@@ -98,7 +99,18 @@ video:focus {
 }
 
 #videoHidden video {
-  opacity: 100;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#imageHidden {
+  position: relative;
+  z-index: -1;
+}
+
+#imageHidden img {
+  opacity: 0;
   width: 100%;
   height: 100%;
 }
@@ -106,39 +118,56 @@ video:focus {
 #popupWindowMenu {
   position: absolute;
   display: flex;
-  z-index: 100;
+  z-index: 9999;
   width: 100vw;
+  top: 0;
+  left: 0;
 }
+
 #popupWindowMenu button {
   color: white;
   font-weight: 700;
+  padding: 10px 15px;
   align-self: flex-end;
   background-color: transparent;
+
 }
 
 #imageContainer {
-  height: 100vh;
-  width: 100vw;
+  height: inherit;
+  width: inherit;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: black;
 }
 
-#imageContainer img {
-  max-width: 100vh;
-  max-height: 100vh;
+#imageContainer div {
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  transition: opacity 400ms;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center center;
+}
+
+#imageContainer div.hide {
+  opacity: 1;
+}
+
+#imageContainer div.hide {
+  opacity: 0;
 }
 
 #videoContainer {
-  height: 100vh;
-  width: 100vw;
+  height: inherit;
+  width: inherit;
+  position: absolute;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: black;
-  max-width: 100vh;
-  max-height: 100vh;
 }
 
 video#videoPlayer {
