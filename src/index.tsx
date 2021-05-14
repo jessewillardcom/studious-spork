@@ -1,12 +1,18 @@
 import React from 'react';
 import { render } from 'react-dom';
 import VideoPlayer from './VideoPlayer';
+import Slideshow from './Slideshow';
 import Home from './Home';
 
 const queryString = new URLSearchParams(window.location.search);
+const playlist = queryString.get('list') ?? '';
 const view = queryString.get('view');
 
 switch (view) {
+  case 'Slideshow': {
+    render(<Slideshow playlist={playlist} />, document.getElementById('root'));
+    break;
+  }
   case 'VideoSingle': {
     const video = queryString.get('video') ?? '';
     const segments = video.split('/') ?? [''];
@@ -15,7 +21,6 @@ switch (view) {
     break;
   }
   case 'VideoMulti': {
-    const playlist = queryString.get('list') ?? '';
     document.title = playlist;
     render(
       <VideoPlayer playlist={playlist} />,

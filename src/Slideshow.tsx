@@ -1,7 +1,5 @@
 /* eslint-disable no-console */
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react/jsx-props-no-spreading */
-/* eslint-disable jsx-a11y/media-has-caption */
 import React, { MouseEvent, useEffect, useRef, useState } from 'react';
 import { ipcRenderer } from 'electron';
 import { SERVER } from './constants';
@@ -9,49 +7,35 @@ import { SERVER } from './constants';
 let hideMenuTimeout: NodeJS.Timeout;
 let mouseMoveDebounce: NodeJS.Timeout;
 
-interface VideoPlayerProps {
-  playlist?: string;
-  video?: string;
+interface SlideshowProps {
+  playlist: string;
 }
 
-export default function VideoPlayer({ playlist, video }: VideoPlayerProps) {
-  const videoContainer = useRef<HTMLDivElement | never>(null);
-  const videoPlayer = useRef<HTMLVideoElement | never>(null);
-  const videoAttributes = {
-    autoPlay: true,
-    loop: false,
-    muted: true,
-  };
-
-  // Single Video
-  if (playlist === '') videoAttributes.loop = true;
-  useEffect(() => {
-    if (video !== '' && videoPlayer?.current !== null)
-      videoPlayer.current.src = `${SERVER}${video}`;
-  }, [video]);
+export default function Slideshow({ playlist }: SlideshowProps) {
+  const imageContainer = useRef<HTMLDivElement | never>(null);
 
   // Multi Video
   const [index, setIndex] = useState(-1);
-  const [videoList, setVideoList] = useState([]);
+  const [imageList, setImageList] = useState([]);
 
-  const nextVideo = () => {
+  const nextImage = () => {
     if (playlist !== '')
-      setIndex(() => (index === videoList.length - 1 ? 0 : index + 1));
+      setIndex(() => (index === imageList.length - 1 ? 0 : index + 1));
   };
 
   useEffect(() => {
-    if (index > -1 && videoPlayer?.current !== null) {
-      videoPlayer.current.setAttribute('src', `${SERVER}${videoList[index]}`);
+    if (index > -1 && imageList.length === 0) {
+      // videoPlayer.current.setAttribute('src', `${SERVER}${videoList[index]}`);
     }
   }, [index]);
 
   useEffect(() => {
-    if (playlist !== '' && videoPlayer?.current !== null) {
-      fetch(`${SERVER}/videoPlaylist/${playlist}`)
+    if (playlist !== '' && imageList.length === 0) {
+      fetch(`${SERVER}/imagePlaylist/${playlist}`)
         .then((response) => response.json())
         .then((json) => {
-          setVideoList(json);
-          nextVideo();
+          setImageList(json);
+          nextImage();
           return json;
         })
         .catch(() => console.error);
@@ -62,9 +46,7 @@ export default function VideoPlayer({ playlist, video }: VideoPlayerProps) {
   const [menu, setMenu] = useState(false);
   const closeWindow = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    const key = playlist || video;
-    console.log('closeWindow[', key);
-    ipcRenderer.send('closeWindow', key);
+    ipcRenderer.send('closeWindow', playlist);
   };
   const hideVideoMenu = () => {
     setMenu(false);
@@ -100,20 +82,7 @@ export default function VideoPlayer({ playlist, video }: VideoPlayerProps) {
           X
         </button>
       </div>
-      <div id="videoContainer" ref={videoContainer}>
-        <video
-          id="videoPlayer"
-          controls={menu}
-          ref={videoPlayer}
-          {...videoAttributes}
-          onEnded={nextVideo}
-        />
-      </div>
+      <div id="imageContainer" ref={imageContainer} />
     </>
   );
 }
-
-VideoPlayer.defaultProps = {
-  playlist: '',
-  video: '',
-};

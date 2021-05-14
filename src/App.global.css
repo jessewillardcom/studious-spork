@@ -116,6 +116,20 @@ video:focus {
   background-color: transparent;
 }
 
+#imageContainer {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: black;
+}
+
+#imageContainer img {
+  max-width: 100vh;
+  max-height: 100vh;
+}
+
 #videoContainer {
   height: 100vh;
   width: 100vw;
@@ -123,6 +137,8 @@ video:focus {
   align-items: center;
   justify-content: center;
   background-color: black;
+  max-width: 100vh;
+  max-height: 100vh;
 }
 
 video#videoPlayer {

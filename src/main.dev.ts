@@ -17,12 +17,13 @@ import 'regenerator-runtime/runtime';
 import { app, BrowserWindow, ipcMain, IpcMainEvent, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
-
+import { EXPRESS_ADDRESS, EXPRESS_PORT } from './constants';
 import {
-  CreateMediaPlayer,
+  HttpPostPlaylist,
   MultimediaPlaylists,
-  PostedVideoPlaylist,
+  MultiVideoPlayer,
   SingleVideoPlayer,
+  SlideshowPlayer,
 } from './main/main.interface';
 import MenuBuilder from './menu';
 
@@ -36,8 +37,10 @@ if (!fs.existsSync(IMAGE_PLAYLIST)) fs.mkdirSync(IMAGE_PLAYLIST);
 const VIDEO_PLAYLIST = path.resolve(PLAYLIST_ROOT, 'videos');
 if (!fs.existsSync(VIDEO_PLAYLIST)) fs.mkdirSync(VIDEO_PLAYLIST);
 
+// <-- Wait until boot up to load playlists
 // Keep track of all the playlits in an array of timestamped files
-let savedVideoPlaylists: string[]; // <-- Wait until boot up to load playlists
+let savedImagePlaylists: string[];
+let savedVideoPlaylists: string[];
 const allSavedVideoPlaylists = (): string[] => {
   let playlistArray: string[] = [];
   try {
@@ -68,18 +71,54 @@ const playlistTable: MultimediaPlaylists = {
   videos: {},
 };
 
+const tracePlaylist = () => {
+  Object.keys(playlistTable.images).forEach((timestamp) => {
+    console.log(playlistTable.images[timestamp]);
+  });
+  Object.keys(playlistTable.videos).forEach((timestamp) => {
+    console.log(playlistTable.videos[timestamp]);
+  });
+};
+
+const saveImagePlaylist = (passedKey: number) => {
+  const filename = `${passedKey}.json`;
+  fs.writeFileSync(
+    path.resolve(VIDEO_PLAYLIST, filename),
+    JSON.stringify(playlistTable.images[passedKey])
+  );
+};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+server.get('/imagePlaylist/:key', async (request: any, response: any) => {
+  const { key } = request.params;
+  console.log('/imagePlaylist/:key', key);
+  response.json(playlistTable.images[key].list);
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+server.post('/imagePlaylist', async (request: any, response: any) => {
+  console.log('POST /imagePlaylist', request.body);
+  const timestamp = Date.now();
+  const { list, save, title }: HttpPostPlaylist = request.body;
+  playlistTable.images[timestamp] = {
+    list,
+    title,
+  };
+  if (save === true) saveImagePlaylist(timestamp);
+  savedImagePlaylists = allSavedVideoPlaylists();
+  tracePlaylist();
+  response.json({
+    saved: savedImagePlaylists,
+    success: true,
+    timestamp,
+  });
+});
+
 const saveVideoPlaylist = (passedKey: number) => {
   const filename = `${passedKey}.json`;
   fs.writeFileSync(
     path.resolve(VIDEO_PLAYLIST, filename),
     JSON.stringify(playlistTable.videos[passedKey])
   );
-};
-
-const tracePlaylist = () => {
-  Object.keys(playlistTable.videos).forEach((timestamp) => {
-    console.log(playlistTable.videos[timestamp]);
-  });
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -93,7 +132,7 @@ server.get('/videoPlaylist/:key', async (request: any, response: any) => {
 server.post('/videoPlaylist', async (request: any, response: any) => {
   // console.log('POST /playlist', request.body);
   const timestamp = Date.now();
-  const { list, save, title }: PostedVideoPlaylist = request.body;
+  const { list, save, title }: HttpPostPlaylist = request.body;
   playlistTable.videos[timestamp] = {
     list,
     title,
@@ -108,7 +147,7 @@ server.post('/videoPlaylist', async (request: any, response: any) => {
   });
 });
 
-server.listen(8080, '127.0.0.1', () => {
+server.listen(EXPRESS_PORT, EXPRESS_ADDRESS, () => {
   console.log('>>> Web server started >>', HOME);
 });
 // :TODO:: Allow served folder to be changed
@@ -184,6 +223,29 @@ const createWindow = async () => {
   });
 
   ipcMain.on(
+    'playSlideshow',
+    (_: IpcMainEvent, { list, width, height }: SlideshowPlayer) => {
+      if (singleWindows[list] !== undefined) singleWindows[list].close();
+      singleWindows[list] = new BrowserWindow({
+        width,
+        height,
+        frame: true,
+        webPreferences: {
+          devTools: true,
+          nodeIntegration: true,
+        },
+      });
+      singleWindows[list].loadURL(
+        `file://${__dirname}/index.html?view=Slideshow&list=${list}`
+      );
+      singleWindows[list].focus();
+      singleWindows[list].on('close', () => {
+        delete singleWindows[list];
+      });
+    }
+  );
+
+  ipcMain.on(
     'playVideoSingle',
     (_: IpcMainEvent, { width, height, video }: SingleVideoPlayer) => {
       if (singleWindows[video] !== undefined) singleWindows[video].close();
@@ -208,7 +270,7 @@ const createWindow = async () => {
 
   ipcMain.on(
     'playVideoMulti',
-    (_: IpcMainEvent, { list, width, height }: CreateMediaPlayer) => {
+    (_: IpcMainEvent, { list, width, height }: MultiVideoPlayer) => {
       console.log('playVideoMulti', width, height, list);
       if (singleWindows[list] !== undefined) singleWindows[list].close();
       singleWindows[list] = new BrowserWindow({

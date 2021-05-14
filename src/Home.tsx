@@ -1,20 +1,24 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 import { ipcRenderer } from 'electron';
+import { SERVER } from './constants';
 import './App.global.css';
 
 const QUERY_STRING = new URLSearchParams(window.location.search);
 const USER_FOLDER = QUERY_STRING.get('home') ?? '';
-const SERVED_PATH = 'http://localhost:8080';
 
 const MultiMedia = () => {
+  const [fileType, setFileType] = useState('');
   const filePicker = useRef<HTMLInputElement | never>(null);
+  const imageContainer = useRef<HTMLDivElement | never>(null);
   const videoContainer = useRef<HTMLDivElement | never>(null);
+  const [imageList, setImageList] = useState<string[] | never[]>([]);
   const [videoList, setVideoList] = useState<string[] | never[]>([]);
 
-  const selectFiles = () => {
+  const selectFiles = (type: string) => {
     if (filePicker?.current) {
       setVideoList([]);
+      setFileType(type);
       filePicker.current.value = '';
       filePicker.current.click();
     }
@@ -36,9 +40,66 @@ const MultiMedia = () => {
       const urlPaths: string[] = fileArray.map((file: File) =>
         noLocalPath(file.path)
       );
-      setVideoList(urlPaths);
+      if (fileType === 'image') setImageList(urlPaths);
+      if (fileType === 'video') setVideoList(urlPaths);
     }
   };
+
+  const postPlaylist = async (list: string[], endpoint: string) => {
+    const request = {
+      list,
+      save: false,
+      title: '',
+    };
+    const response = await fetch(`${SERVER}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+    return response.json();
+  };
+
+  const measureImageNode = (passedVideoNode: HTMLImageElement) => {
+    const vericalPadding = 30;
+    const videoWidth = passedVideoNode.offsetWidth;
+    const videoHeight = passedVideoNode.offsetHeight + vericalPadding;
+    return [videoWidth, videoHeight];
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const slideshowListener = async (event: any) => {
+    const [videoWidth, videoHeight] = measureImageNode(event.target);
+    const { timestamp } = await postPlaylist(imageList, '/imagePlaylist');
+    ipcRenderer.send('playSlideshow', {
+      list: timestamp,
+      width: videoWidth,
+      height: videoHeight,
+    });
+  };
+
+  const replaceImageNode = (passedImageNode: HTMLImageElement) => {
+    const imageElement = imageContainer.current;
+    while (imageElement?.firstChild) {
+      imageElement.removeChild(imageElement.firstChild);
+    } // Removes all child nodes then appends new video node
+    imageElement?.appendChild(passedImageNode);
+  };
+
+  const playImages = () => {
+    const newImageNode = document.createElement('img');
+    newImageNode.setAttribute('src', `${SERVER}${imageList[0]}`);
+    newImageNode.addEventListener('load', slideshowListener);
+    replaceImageNode(newImageNode);
+  };
+
+  useEffect(() => {
+    if (imageList.length > 0) playImages();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [imageList]);
+
+  // --[VIDEO FUNCTIONALITY]---------------------------------------
 
   const measureVideoNode = (passedVideoNode: HTMLVideoElement) => {
     const vericalPadding = 30;
@@ -57,26 +118,10 @@ const MultiMedia = () => {
     });
   };
 
-  const postPlaylist = async () => {
-    const request = {
-      list: videoList,
-      save: false,
-      title: '',
-    };
-    const response = await fetch(`${SERVED_PATH}/videoPlaylist`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request),
-    });
-    return response.json();
-  };
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const videoMultiListener = async (event: any) => {
     const [videoWidth, videoHeight] = measureVideoNode(event.target);
-    const { timestamp } = await postPlaylist();
+    const { timestamp } = await postPlaylist(videoList, '/videoPlaylist');
     ipcRenderer.send('playVideoMulti', {
       list: timestamp,
       width: videoWidth,
@@ -94,14 +139,14 @@ const MultiMedia = () => {
 
   const playVideo = () => {
     const newVideoNode = document.createElement('video');
-    newVideoNode.setAttribute('src', `${SERVED_PATH}${videoList[0]}`);
+    newVideoNode.setAttribute('src', `${SERVER}${videoList[0]}`);
     newVideoNode.addEventListener('canplay', videoSingleListener);
     replaceVideoNode(newVideoNode);
   };
 
   const playVideos = () => {
     const newVideoNode = document.createElement('video');
-    newVideoNode.setAttribute('src', `${SERVED_PATH}${videoList[0]}`);
+    newVideoNode.setAttribute('src', `${SERVER}${videoList[0]}`);
     newVideoNode.addEventListener('canplay', videoMultiListener);
     replaceVideoNode(newVideoNode);
   };
@@ -115,8 +160,12 @@ const MultiMedia = () => {
   return (
     <>
       <div id="headerContainer">
-        <button type="button" onClick={selectFiles}>
+        <button type="button" onClick={() => selectFiles('video')}>
           Video Playlist
+        </button>
+        <span>&nbsp;&nbsp;</span>
+        <button type="button" onClick={() => selectFiles('image')}>
+          Image Playlist
         </button>
         <input
           multiple
@@ -126,6 +175,7 @@ const MultiMedia = () => {
           type="file"
         />
       </div>
+      <div id="imageHidden" ref={imageContainer} />
       <div id="videoHidden" ref={videoContainer} />
       <div id="footerContainer" />
     </>
