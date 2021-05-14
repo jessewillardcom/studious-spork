@@ -22,25 +22,24 @@ import {
   HttpPostPlaylist,
   MultimediaPlaylists,
   MultiVideoPlayer,
-  SingleVideoPlayer,
   SlideshowPlayer,
 } from './main/main.interface';
 import MenuBuilder from './menu';
 
 // Create playlists directory if one doesn't already exist
-const PLAYLIST_ROOT = path.resolve(__dirname, 'playlists');
+// const PLAYLIST_ROOT = path.resolve(__dirname, 'playlists');
 // if (!fs.existsSync(PLAYLIST_ROOT)) fs.mkdirSync(PLAYLIST_ROOT);
 
-const IMAGE_PLAYLIST = path.resolve(PLAYLIST_ROOT, 'images');
+// const IMAGE_PLAYLIST = path.resolve(PLAYLIST_ROOT, 'images');
 // if (!fs.existsSync(IMAGE_PLAYLIST)) fs.mkdirSync(IMAGE_PLAYLIST);
 
-const VIDEO_PLAYLIST = path.resolve(PLAYLIST_ROOT, 'videos');
+// const VIDEO_PLAYLIST = path.resolve(PLAYLIST_ROOT, 'videos');
 // if (!fs.existsSync(VIDEO_PLAYLIST)) fs.mkdirSync(VIDEO_PLAYLIST);
 
 // <-- Wait until boot up to load playlists
 // Keep track of all the playlits in an array of timestamped files
-let savedImagePlaylists: string[];
-let savedVideoPlaylists: string[];
+// let savedImagePlaylists: string[];
+// let savedVideoPlaylists: string[];
 /*
 const allSavedVideoPlaylists = (): string[] => {
   let playlistArray: string[] = [];
@@ -81,13 +80,13 @@ const tracePlaylist = () => {
   });
 };
 
-const saveImagePlaylist = (passedKey: number) => {
-  const filename = `${passedKey}.json`;
-  fs.writeFileSync(
-    path.resolve(VIDEO_PLAYLIST, filename),
-    JSON.stringify(playlistTable.images[passedKey])
-  );
-};
+// const saveImagePlaylist = (passedKey: number) => {
+//   const filename = `${passedKey}.json`;
+//   fs.writeFileSync(
+//     path.resolve(IMAGE_PLAYLIST, filename),
+//     JSON.stringify(playlistTable.images[passedKey])
+//   );
+// };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 server.get('/imagePlaylist/:key', async (request: any, response: any) => {
   const { key } = request.params;
@@ -104,7 +103,7 @@ server.post('/imagePlaylist', async (request: any, response: any) => {
     list,
     title,
   };
-  if (save === true) saveImagePlaylist(timestamp);
+  // if (save === true) saveImagePlaylist(timestamp);
   // savedImagePlaylists = allSavedVideoPlaylists();
   // tracePlaylist();
   response.json({
@@ -114,13 +113,13 @@ server.post('/imagePlaylist', async (request: any, response: any) => {
   });
 });
 
-const saveVideoPlaylist = (passedKey: number) => {
-  const filename = `${passedKey}.json`;
-  fs.writeFileSync(
-    path.resolve(VIDEO_PLAYLIST, filename),
-    JSON.stringify(playlistTable.videos[passedKey])
-  );
-};
+// const saveVideoPlaylist = (passedKey: number) => {
+//   const filename = `${passedKey}.json`;
+//   fs.writeFileSync(
+//     path.resolve(VIDEO_PLAYLIST, filename),
+//     JSON.stringify(playlistTable.videos[passedKey])
+//   );
+// };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 server.get('/videoPlaylist/:key', async (request: any, response: any) => {
@@ -137,7 +136,7 @@ server.post('/videoPlaylist', async (request: any, response: any) => {
     list,
     title,
   };
-  if (save === true) saveVideoPlaylist(timestamp);
+  // if (save === true) saveVideoPlaylist(timestamp);
   // savedVideoPlaylists = allSavedVideoPlaylists();
   // tracePlaylist();
   response.json({
@@ -246,29 +245,6 @@ const createWindow = async () => {
   );
 
   ipcMain.on(
-    'playVideoSingle',
-    (_: IpcMainEvent, { width, height, video }: SingleVideoPlayer) => {
-      if (singleWindows[video] !== undefined) singleWindows[video].close();
-      singleWindows[video] = new BrowserWindow({
-        width,
-        height,
-        frame: false,
-        webPreferences: {
-          devTools: false,
-          nodeIntegration: true,
-        },
-      });
-      singleWindows[video].loadURL(
-        `file://${__dirname}/index.html?view=VideoSingle&video=${video}`
-      );
-      singleWindows[video].focus();
-      singleWindows[video].on('close', () => {
-        delete singleWindows[video];
-      });
-    }
-  );
-
-  ipcMain.on(
     'playVideoMulti',
     (_: IpcMainEvent, { list, width, height }: MultiVideoPlayer) => {
       if (singleWindows[list] !== undefined) singleWindows[list].close();
@@ -290,15 +266,7 @@ const createWindow = async () => {
       });
     }
   );
-  /*
-  ipcMain.on(
-    'playImagesMulti',
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    (_: IpcMainEvent, { list, width, height }: CreateMediaPlayer) => {
-      // console.log('playImagesMulti', width, height, videos);
-    }
-  );
-  */
+
   // @TODO: Use 'ready-to-show' event
   //        https://github.com/electron/electron/blob/master/docs/api/browser-window.md#using-ready-to-show-event
   mainWindow.webContents.on('did-finish-load', () => {

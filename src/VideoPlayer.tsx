@@ -10,33 +10,26 @@ let hideMenuTimeout: NodeJS.Timeout;
 let mouseMoveDebounce: NodeJS.Timeout;
 
 interface VideoPlayerProps {
-  playlist?: string;
-  video?: string;
+  playlist: string;
 }
 
-export default function VideoPlayer({ playlist, video }: VideoPlayerProps) {
+export default function VideoPlayer({ playlist }: VideoPlayerProps) {
   const videoContainer = useRef<HTMLDivElement | never>(null);
   const videoPlayer = useRef<HTMLVideoElement | never>(null);
   const videoAttributes = {
     autoPlay: true,
-    loop: false,
     muted: true,
   };
 
-  // Single Video
-  if (playlist === '') videoAttributes.loop = true;
-  useEffect(() => {
-    if (video !== '' && videoPlayer?.current !== null)
-      videoPlayer.current.src = `${SERVER}${video}`;
-  }, [video]);
-
   // Multi Video
+  const [loop, setLoop] = useState(false);
   const [index, setIndex] = useState(-1);
   const [videoList, setVideoList] = useState([]);
 
   const nextVideo = () => {
-    if (playlist !== '')
+    if (playlist.length > 1) {
       setIndex(() => (index === videoList.length - 1 ? 0 : index + 1));
+    }
   };
 
   useEffect(() => {
@@ -58,13 +51,16 @@ export default function VideoPlayer({ playlist, video }: VideoPlayerProps) {
     }
   }, [playlist]);
 
+  useEffect(() => {
+    if (videoList.length === 1) setLoop(true);
+  }, [videoList]);
+
   // NOTE:: This hides the menu and allows window to close
   const [menu, setMenu] = useState(false);
   const closeWindow = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    const key = playlist || video;
-    console.log('closeWindow[', key);
-    ipcRenderer.send('closeWindow', key);
+    console.log('closeWindow[', playlist);
+    ipcRenderer.send('closeWindow', playlist);
   };
   const hideVideoMenu = () => {
     setMenu(false);
@@ -103,6 +99,7 @@ export default function VideoPlayer({ playlist, video }: VideoPlayerProps) {
       <div id="videoContainer" ref={videoContainer}>
         <video
           id="videoPlayer"
+          loop={loop}
           controls={menu}
           ref={videoPlayer}
           {...videoAttributes}
@@ -112,8 +109,3 @@ export default function VideoPlayer({ playlist, video }: VideoPlayerProps) {
     </>
   );
 }
-
-VideoPlayer.defaultProps = {
-  playlist: '',
-  video: '',
-};

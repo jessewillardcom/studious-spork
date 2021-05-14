@@ -4,7 +4,7 @@ import React, { MouseEvent, useEffect, useRef, useState } from 'react';
 import { ipcRenderer } from 'electron';
 import { SERVER } from './constants';
 
-let slideshowTimout: NodeJS.Interval;
+let slideshowTimout: NodeJS.Timeout;
 let hideMenuTimeout: NodeJS.Timeout;
 let mouseMoveDebounce: NodeJS.Timeout;
 
@@ -31,6 +31,10 @@ export default function Slideshow({ playlist }: SlideshowProps) {
     setIndex(fadeIn);
   };
 
+  // TODO:: Use arrow keys to adjust the playback
+  // Up and down change the interval
+  // Left and right stop the interval and advance the slideshow manually
+  // Spacebar resumes the slide show after pausing manual advance mode
   useEffect(() => {
     clearInterval(slideshowTimout);
     slideshowTimout = setInterval(() => {

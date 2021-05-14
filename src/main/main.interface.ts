@@ -3,12 +3,6 @@ export interface MultimediaPlaylists {
   videos: Record<string, PlaylistAttributes>;
 }
 
-export interface MultiVideoPlayer {
-  list: string;
-  width: number;
-  height: number;
-}
-
 export interface PlaylistAttributes {
   list: string[];
   title: string;
@@ -20,10 +14,10 @@ export interface HttpPostPlaylist {
   title: string;
 }
 
-export interface SingleVideoPlayer {
+export interface MultiVideoPlayer {
+  list: string;
   width: number;
   height: number;
-  video: string;
 }
 
 export interface SlideshowPlayer {

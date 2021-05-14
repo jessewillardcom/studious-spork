@@ -17,6 +17,7 @@ const MultiMedia = () => {
 
   const selectFiles = (type: string) => {
     if (filePicker?.current) {
+      setImageList([]);
       setVideoList([]);
       setFileType(type);
       filePicker.current.value = '';
@@ -31,11 +32,7 @@ const MultiMedia = () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const changeFiles = (event: any) => {
     const fileSet = event?.target?.files;
-    if (fileSet.length === 1) {
-      const oneFile = fileSet[0];
-      const urlPath = noLocalPath(oneFile?.path);
-      if (urlPath) setVideoList([urlPath]);
-    } else if (fileSet.length > 1) {
+    if (fileSet.length > 0) {
       const fileArray: File[] = Object.values(fileSet);
       const urlPaths: string[] = fileArray.map((file: File) =>
         noLocalPath(file.path)
@@ -115,16 +112,6 @@ const MultiMedia = () => {
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const videoSingleListener = (event: any) => {
-    const [videoWidth, videoHeight] = measureVideoNode(event.target);
-    ipcRenderer.send('playVideoSingle', {
-      width: videoWidth,
-      height: videoHeight,
-      video: `${videoList[0]}`,
-    });
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const videoMultiListener = async (event: any) => {
     const [videoWidth, videoHeight] = measureVideoNode(event.target);
     const { timestamp } = await postPlaylist(videoList, '/videoPlaylist');
@@ -139,7 +126,6 @@ const MultiMedia = () => {
     const videoElement = videoContainer.current;
     while (videoElement?.firstChild) {
       videoElement.removeEventListener('canplay', videoMultiListener);
-      videoElement.removeEventListener('canplay', videoSingleListener);
       videoElement.removeChild(videoElement.firstChild);
     } // Removes all child nodes then appends new video node
     return videoElement;
@@ -150,13 +136,6 @@ const MultiMedia = () => {
     parentElement?.appendChild(passedVideoNode);
   };
 
-  const playVideo = () => {
-    const newVideoNode = document.createElement('video');
-    newVideoNode.setAttribute('src', `${SERVER}${videoList[0]}`);
-    newVideoNode.addEventListener('canplay', videoSingleListener);
-    replaceVideoNode(newVideoNode);
-  };
-
   const playVideos = () => {
     const newVideoNode = document.createElement('video');
     newVideoNode.setAttribute('src', `${SERVER}${videoList[0]}`);
@@ -165,8 +144,7 @@ const MultiMedia = () => {
   };
 
   useEffect(() => {
-    if (videoList.length === 1) playVideo();
-    if (videoList.length > 1) playVideos();
+    if (videoList.length > 0) playVideos();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoList]);
 
