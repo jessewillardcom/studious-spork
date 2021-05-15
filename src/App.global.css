@@ -88,6 +88,13 @@ a:hover {
 #footerContainer {
   flex: 2;
 }
+video::-webkit-media-controls-enclosure {
+  display: inherit;
+}
+
+video.fullscreen::-webkit-media-controls-enclosure {
+  display: none !important;
+}
 
 video:focus {
   outline: none;
@@ -130,7 +137,6 @@ video:focus {
   padding: 10px 15px;
   align-self: flex-end;
   background-color: transparent;
-
 }
 
 #imageContainer {

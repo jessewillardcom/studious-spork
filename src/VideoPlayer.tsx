@@ -25,6 +25,7 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
   const [loop, setLoop] = useState(false);
   const [index, setIndex] = useState(-1);
   const [videoList, setVideoList] = useState([]);
+  const [fullscreen, setFullscreen] = useState(false);
 
   const nextVideo = () => {
     if (playlist.length > 1) {
@@ -70,6 +71,23 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
   };
 
   useEffect(() => {
+    document.addEventListener('webkitfullscreenchange', (event) => {
+      // document.fullscreenElement will point to the element that
+      // is in fullscreen mode if there is one. If there isn't one,
+      // the value of the property is null.
+      console.log('fullscreen', document.fullscreenElement);
+      if (document.fullscreenElement) {
+        hideVideoMenu();
+        setFullscreen(true);
+        clearTimeout(hideMenuTimeout);
+        clearTimeout(mouseMoveDebounce);
+      } else {
+        setFullscreen(false);
+      }
+    });
+  }, [videoPlayer]);
+
+  useEffect(() => {
     document.body.addEventListener('mouseleave', () => {
       clearTimeout(hideMenuTimeout);
       clearTimeout(mouseMoveDebounce);
@@ -77,15 +95,17 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
     });
 
     window.addEventListener('mousemove', () => {
-      clearTimeout(hideMenuTimeout);
-      hideMenuTimeout = setTimeout(() => {
-        hideVideoMenu();
-      }, 2500);
+      if (!fullscreen) {
+        clearTimeout(hideMenuTimeout);
+        hideMenuTimeout = setTimeout(() => {
+          hideVideoMenu();
+        }, 2500);
 
-      clearTimeout(mouseMoveDebounce);
-      mouseMoveDebounce = setTimeout(() => {
-        showVideoMenu();
-      }, 10);
+        clearTimeout(mouseMoveDebounce);
+        mouseMoveDebounce = setTimeout(() => {
+          showVideoMenu();
+        }, 10);
+      }
     });
   }, []);
 
@@ -104,6 +124,7 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
           ref={videoPlayer}
           {...videoAttributes}
           onEnded={nextVideo}
+          className={fullscreen ? 'fullscreen' : ''}
         />
       </div>
     </>
