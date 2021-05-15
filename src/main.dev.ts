@@ -187,6 +187,66 @@ const installExtensions = async () => {
     .catch(console.log);
 };
 
+const singleWindows: Record<string, BrowserWindow> = {};
+let debounceImageEvent: NodeJS.Timeout;
+let debounceVideoEvent: NodeJS.Timeout;
+
+ipcMain.on('closeWindow', (_: IpcMainEvent, key: string) => {
+  singleWindows[key].close();
+});
+
+ipcMain.on(
+  'playSlideshow',
+  (_: IpcMainEvent, { list, width, height }: SlideshowPlayer) => {
+    if (singleWindows[list] !== undefined) singleWindows[list].close();
+    clearTimeout(debounceImageEvent);
+    debounceImageEvent = setTimeout(() => {
+      singleWindows[list] = new BrowserWindow({
+        width,
+        height,
+        frame: false,
+        webPreferences: {
+          devTools: false,
+          nodeIntegration: true,
+        },
+      });
+      singleWindows[list].loadURL(
+        `file://${__dirname}/index.html?view=Slideshow&list=${list}`
+      );
+      singleWindows[list].focus();
+      singleWindows[list].on('close', () => {
+        delete singleWindows[list];
+      });
+    }, 100);
+  }
+);
+
+ipcMain.on(
+  'playVideoMulti',
+  (_: IpcMainEvent, { list, width, height }: MultiVideoPlayer) => {
+    if (singleWindows[list] !== undefined) singleWindows[list].close();
+    clearTimeout(debounceVideoEvent);
+    debounceVideoEvent = setTimeout(() => {
+      singleWindows[list] = new BrowserWindow({
+        width,
+        height,
+        frame: false,
+        webPreferences: {
+          devTools: false,
+          nodeIntegration: true,
+        },
+      });
+      singleWindows[list].loadURL(
+        `file://${__dirname}/index.html?view=VideoMulti&list=${list}`
+      );
+      singleWindows[list].focus();
+      singleWindows[list].on('close', () => {
+        delete singleWindows[list];
+      });
+    }, 50);
+  }
+);
+
 const createWindow = async () => {
   if (
     process.env.NODE_ENV === 'development' ||
@@ -214,58 +274,6 @@ const createWindow = async () => {
   });
 
   mainWindow.loadURL(`file://${__dirname}/index.html?home=${HOME}`);
-
-  const singleWindows: Record<string, BrowserWindow> = {};
-
-  ipcMain.on('closeWindow', (_: IpcMainEvent, key: string) => {
-    singleWindows[key].close();
-  });
-
-  ipcMain.on(
-    'playSlideshow',
-    (_: IpcMainEvent, { list, width, height }: SlideshowPlayer) => {
-      if (singleWindows[list] !== undefined) singleWindows[list].close();
-      singleWindows[list] = new BrowserWindow({
-        width,
-        height,
-        frame: false,
-        webPreferences: {
-          devTools: false,
-          nodeIntegration: true,
-        },
-      });
-      singleWindows[list].loadURL(
-        `file://${__dirname}/index.html?view=Slideshow&list=${list}`
-      );
-      singleWindows[list].focus();
-      singleWindows[list].on('close', () => {
-        delete singleWindows[list];
-      });
-    }
-  );
-
-  ipcMain.on(
-    'playVideoMulti',
-    (_: IpcMainEvent, { list, width, height }: MultiVideoPlayer) => {
-      if (singleWindows[list] !== undefined) singleWindows[list].close();
-      singleWindows[list] = new BrowserWindow({
-        width,
-        height,
-        frame: false,
-        webPreferences: {
-          devTools: false,
-          nodeIntegration: true,
-        },
-      });
-      singleWindows[list].loadURL(
-        `file://${__dirname}/index.html?view=VideoMulti&list=${list}`
-      );
-      singleWindows[list].focus();
-      singleWindows[list].on('close', () => {
-        delete singleWindows[list];
-      });
-    }
-  );
 
   // @TODO: Use 'ready-to-show' event
   //        https://github.com/electron/electron/blob/master/docs/api/browser-window.md#using-ready-to-show-event
@@ -307,6 +315,9 @@ app.on('window-all-closed', () => {
   // Respect the OSX convention of having the application in memory even
   // after all windows have been closed
   if (process.platform !== 'darwin') {
+    Object.keys(singleWindows).forEach((value) => {
+      delete singleWindows[value];
+    });
     app.quit();
   }
 });
