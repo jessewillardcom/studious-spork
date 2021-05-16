@@ -18,6 +18,7 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
   const videoPlayer = useRef<HTMLVideoElement | never>(null);
   const videoAttributes = {
     autoPlay: true,
+    controls: true,
     muted: true,
   };
 
@@ -25,7 +26,6 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
   const [loop, setLoop] = useState(false);
   const [index, setIndex] = useState(-1);
   const [videoList, setVideoList] = useState([]);
-  const [fullscreen, setFullscreen] = useState(false);
 
   const nextVideo = () => {
     if (playlist.length > 1) {
@@ -77,12 +77,9 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
       // the value of the property is null.
       console.log('fullscreen', document.fullscreenElement);
       if (document.fullscreenElement) {
-        hideVideoMenu();
-        setFullscreen(true);
         clearTimeout(hideMenuTimeout);
         clearTimeout(mouseMoveDebounce);
-      } else {
-        setFullscreen(false);
+        hideVideoMenu();
       }
     });
   }, [videoPlayer]);
@@ -95,17 +92,15 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
     });
 
     window.addEventListener('mousemove', () => {
-      if (!fullscreen) {
-        clearTimeout(hideMenuTimeout);
-        hideMenuTimeout = setTimeout(() => {
-          hideVideoMenu();
-        }, 2500);
+      clearTimeout(hideMenuTimeout);
+      hideMenuTimeout = setTimeout(() => {
+        hideVideoMenu();
+      }, 2500);
 
-        clearTimeout(mouseMoveDebounce);
-        mouseMoveDebounce = setTimeout(() => {
-          showVideoMenu();
-        }, 10);
-      }
+      clearTimeout(mouseMoveDebounce);
+      mouseMoveDebounce = setTimeout(() => {
+        showVideoMenu();
+      }, 10);
     });
   }, []);
 
@@ -120,11 +115,10 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
         <video
           id="videoPlayer"
           loop={loop}
-          controls={menu}
           ref={videoPlayer}
           {...videoAttributes}
           onEnded={nextVideo}
-          className={fullscreen ? 'fullscreen' : ''}
+          className={!menu ? 'hideControls' : ''}
         />
       </div>
     </>

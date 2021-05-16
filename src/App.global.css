@@ -92,7 +92,7 @@ video::-webkit-media-controls-enclosure {
   display: inherit;
 }
 
-video.fullscreen::-webkit-media-controls-enclosure {
+video.hideControls::-webkit-media-controls-enclosure {
   display: none !important;
 }
 
