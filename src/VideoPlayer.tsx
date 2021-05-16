@@ -16,11 +16,52 @@ interface VideoPlayerProps {
 export default function VideoPlayer({ playlist }: VideoPlayerProps) {
   const videoContainer = useRef<HTMLDivElement | never>(null);
   const videoPlayer = useRef<HTMLVideoElement | never>(null);
-  const videoAttributes = {
-    autoPlay: true,
-    controls: true,
-    muted: true,
+
+  // NOTE:: This hides the menu and allows window to close
+  const [menu, setMenu] = useState(false);
+  const closeWindow = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    ipcRenderer.send('closeWindow', playlist);
   };
+  const hideVideoMenu = () => {
+    setMenu(false);
+  };
+  const showVideoMenu = () => {
+    setMenu(true);
+  };
+
+  useEffect(() => {
+    document.addEventListener('webkitfullscreenchange', (e) => {
+      // document.fullscreenElement will point to the element that
+      // is in fullscreen mode if there is one. If there isn't one,
+      // the value of the property is null.
+      if (document.fullscreenElement) {
+        clearTimeout(hideMenuTimeout);
+        clearTimeout(mouseMoveDebounce);
+        hideVideoMenu();
+      }
+    });
+  }, [videoPlayer]);
+
+  useEffect(() => {
+    document.body.addEventListener('mouseleave', () => {
+      clearTimeout(hideMenuTimeout);
+      clearTimeout(mouseMoveDebounce);
+      hideVideoMenu();
+    });
+
+    window.addEventListener('mousemove', () => {
+      clearTimeout(hideMenuTimeout);
+      hideMenuTimeout = setTimeout(() => {
+        hideVideoMenu();
+      }, 2500);
+
+      clearTimeout(mouseMoveDebounce);
+      mouseMoveDebounce = setTimeout(() => {
+        showVideoMenu();
+      }, 10);
+    });
+  }, []);
 
   // Multi Video
   const [loop, setLoop] = useState(false);
@@ -56,62 +97,44 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
     if (videoList.length === 1) setLoop(true);
   }, [videoList]);
 
-  // NOTE:: This hides the menu and allows window to close
-  const [menu, setMenu] = useState(false);
-  const closeWindow = (event: MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    console.log('closeWindow[', playlist);
-    ipcRenderer.send('closeWindow', playlist);
-  };
-  const hideVideoMenu = () => {
-    setMenu(false);
-  };
-  const showVideoMenu = () => {
-    setMenu(true);
+  const startFullscreen = () => {
+    if (!document.fullscreenElement)
+      videoContainer?.current?.requestFullscreen().catch(err => {});
+    videoPlayer?.current?.play();
   };
 
-  useEffect(() => {
-    document.addEventListener('webkitfullscreenchange', (event) => {
-      // document.fullscreenElement will point to the element that
-      // is in fullscreen mode if there is one. If there isn't one,
-      // the value of the property is null.
-      console.log('fullscreen', document.fullscreenElement);
-      if (document.fullscreenElement) {
-        clearTimeout(hideMenuTimeout);
-        clearTimeout(mouseMoveDebounce);
-        hideVideoMenu();
+  const keyControls = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    switch (e.keyCode) {
+      case 13: {
+        // console.log('ENTER');
+        startFullscreen();
+        break;
       }
-    });
-  }, [videoPlayer]);
+      default:
+      // console.log(e.keyCode);
+    }
+  };
 
-  useEffect(() => {
-    document.body.addEventListener('mouseleave', () => {
-      clearTimeout(hideMenuTimeout);
-      clearTimeout(mouseMoveDebounce);
-      hideVideoMenu();
-    });
-
-    window.addEventListener('mousemove', () => {
-      clearTimeout(hideMenuTimeout);
-      hideMenuTimeout = setTimeout(() => {
-        hideVideoMenu();
-      }, 2500);
-
-      clearTimeout(mouseMoveDebounce);
-      mouseMoveDebounce = setTimeout(() => {
-        showVideoMenu();
-      }, 10);
-    });
-  }, []);
+  const videoAttributes = {
+    autoPlay: true,
+    controls: true,
+    muted: true,
+  };
 
   return (
     <>
-      <div id="popupWindowMenu" style={{ display: menu ? 'flex' : 'none' }}>
-        <button type="button" onClick={closeWindow} onKeyDown={() => false}>
-          X
-        </button>
-      </div>
-      <div id="videoContainer" ref={videoContainer}>
+      <div
+        id="videoContainer"
+        ref={videoContainer}
+        role="button"
+        onKeyUp={keyControls}
+        tabIndex={0}
+      >
+        <div id="popupWindowMenu" style={{ display: menu ? 'block' : 'none' }}>
+          <button type="button" onClick={closeWindow} onKeyDown={() => false}>
+            X
+          </button>
+        </div>
         <video
           id="videoPlayer"
           loop={loop}
