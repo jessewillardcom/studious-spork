@@ -138,10 +138,10 @@ video:focus {
 #popupWindowMenu button {
   color: white;
   font-weight: 700;
+  margin: 5px;
   padding: 10px 15px;
   background-color: transparent;
 }
-
 
 #imageContainer {
   height: inherit;
@@ -192,9 +192,8 @@ video:focus {
   border-radius: 8px;
   background-color: black;
   box-shadow: 0px 8px 28px -6px rgba(24, 39, 75, 0.12),
-  0px 18px 88px -4px rgba(24, 39, 75, 0.14);
+    0px 18px 88px -4px rgba(24, 39, 75, 0.14);
 }
-
 
 #videoContainer {
   height: inherit;
@@ -204,6 +203,7 @@ video:focus {
   align-items: center;
   justify-content: center;
   background-color: black;
+  outline: none;
 }
 
 video#videoPlayer {
