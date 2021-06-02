@@ -7,7 +7,14 @@ import { ipcRenderer } from 'electron';
 import { SERVER } from './constants';
 
 let hideMenuTimeout: NodeJS.Timeout;
+let hideModalTimeout: NodeJS.Timeout;
 let mouseMoveDebounce: NodeJS.Timeout;
+
+const videoAttributes = {
+  autoPlay: true,
+  controls: true,
+  muted: true,
+};
 
 interface VideoPlayerProps {
   playlist: string;
@@ -17,12 +24,13 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
   const videoContainer = useRef<HTMLDivElement | never>(null);
   const videoPlayer = useRef<HTMLVideoElement | never>(null);
 
-  // NOTE:: This hides the menu and allows window to close
-  const [menu, setMenu] = useState(false);
   const closeWindow = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     ipcRenderer.send('closeWindow', playlist);
   };
+
+  // NOTE:: This hides the menu and allows window to close
+  const [menu, setMenu] = useState(false);
   const hideVideoMenu = () => {
     setMenu(false);
   };
@@ -30,6 +38,13 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
     setMenu(true);
   };
 
+  const [modal, setModal] = useState(false);
+  const hideVideoModal = () => {
+    setModal(false);
+  };
+  const showVideoModal = () => {
+    setModal(true);
+  };
   useEffect(() => {
     document.addEventListener('webkitfullscreenchange', (e) => {
       // document.fullscreenElement will point to the element that
@@ -43,39 +58,32 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
     });
   }, [videoPlayer]);
 
-  useEffect(() => {
-    document.body.addEventListener('mouseleave', () => {
-      clearTimeout(hideMenuTimeout);
-      clearTimeout(mouseMoveDebounce);
-      hideVideoMenu();
-    });
-
-    window.addEventListener('mousemove', () => {
-      clearTimeout(hideMenuTimeout);
-      hideMenuTimeout = setTimeout(() => {
-        hideVideoMenu();
-      }, 2500);
-
-      clearTimeout(mouseMoveDebounce);
-      mouseMoveDebounce = setTimeout(() => {
-        showVideoMenu();
-      }, 10);
-    });
-  }, []);
-
   // Multi Video
   const [loop, setLoop] = useState(false);
   const [index, setIndex] = useState(-1);
+  const [looping, setLooping] = useState(false);
+  const [playing, setPlaying] = useState(false);
   const [videoList, setVideoList] = useState([]);
 
+  // NOTE:: This handles the advancing of the slides
+  const prevIndex = () => {
+    return index - 1 === -1 ? videoList.length - 1 : index - 1;
+  };
+
+  const prevVideo = () => {
+    if (playlist.length > 1) setIndex(prevIndex());
+  };
+
+  const nextIndex = () => {
+    return index === videoList.length - 1 ? 0 : index + 1;
+  };
+
   const nextVideo = () => {
-    if (playlist.length > 1) {
-      setIndex(() => (index === videoList.length - 1 ? 0 : index + 1));
-    }
+    if (playlist.length > 1) setIndex(nextIndex());
   };
 
   useEffect(() => {
-    if (index > -1 && videoPlayer?.current !== null) {
+    if (index > -1 && videoPlayer?.current !== null && !looping) {
       videoPlayer.current.setAttribute('src', `${SERVER}${videoList[index]}`);
     }
   }, [index]);
@@ -99,9 +107,27 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
 
   const startFullscreen = () => {
     if (!document.fullscreenElement)
-      videoContainer?.current?.requestFullscreen().catch(err => {});
+      videoContainer?.current?.requestFullscreen().catch((err) => {});
     videoPlayer?.current?.play();
   };
+
+  const toggleLooping = () => {
+    setLooping(!looping);
+  };
+
+  const togglePlaying = () => {
+    if (playing) videoPlayer?.current?.pause();
+    else videoPlayer?.current?.play();
+    setPlaying(!playing);
+  };
+
+  useEffect(() => {
+    clearTimeout(hideModalTimeout);
+    hideModalTimeout = setTimeout(() => {
+      hideVideoModal();
+    }, 500);
+    showVideoModal();
+  }, [looping]);
 
   const keyControls = (e: React.KeyboardEvent<HTMLDivElement>) => {
     switch (e.keyCode) {
@@ -110,16 +136,51 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
         startFullscreen();
         break;
       }
+      case 32: {
+        // console.log('SPACE');
+        togglePlaying();
+        break;
+      }
+      case 76: {
+        // console.log('L');
+        toggleLooping();
+        break;
+      }
+      case 37: {
+        // console.log('RIGHT');
+        prevVideo();
+        break;
+      }
+      case 39: {
+        // console.log('LEFT');
+        nextVideo();
+        break;
+      }
       default:
-      // console.log(e.keyCode);
+        console.log(e.keyCode);
     }
   };
 
-  const videoAttributes = {
-    autoPlay: true,
-    controls: true,
-    muted: true,
-  };
+  useEffect(() => {
+    document.body.addEventListener('mouseleave', () => {
+      clearTimeout(hideMenuTimeout);
+      clearTimeout(mouseMoveDebounce);
+      hideVideoMenu();
+    });
+
+    window.addEventListener('mousemove', () => {
+      videoContainer?.current?.focus();
+      clearTimeout(hideMenuTimeout);
+      hideMenuTimeout = setTimeout(() => {
+        hideVideoMenu();
+      }, 2500);
+
+      clearTimeout(mouseMoveDebounce);
+      mouseMoveDebounce = setTimeout(() => {
+        showVideoMenu();
+      }, 10);
+    });
+  }, []);
 
   return (
     <>
@@ -134,6 +195,10 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
           <button type="button" onClick={closeWindow} onKeyDown={() => false}>
             X
           </button>
+        </div>
+        <div id="videLooping" style={{ display: modal ? 'flex' : 'none' }}>
+          {looping && <strong>Repeat stopped</strong>}
+          {!looping && <strong>Looping active</strong>}
         </div>
         <video
           id="videoPlayer"
