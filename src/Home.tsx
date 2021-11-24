@@ -45,7 +45,6 @@ const MultiMedia = () => {
   const postPlaylist = async (list: string[], endpoint: string) => {
     const request = {
       list,
-      save: false,
       title: '',
     };
     const response = await fetch(`${SERVER}${endpoint}`, {

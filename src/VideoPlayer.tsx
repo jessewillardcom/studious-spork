@@ -46,7 +46,7 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
     setModal(true);
   };
   useEffect(() => {
-    document.addEventListener('webkitfullscreenchange', (e) => {
+    document.addEventListener('webkitfullscreenchange', () => {
       // document.fullscreenElement will point to the element that
       // is in fullscreen mode if there is one. If there isn't one,
       // the value of the property is null.
@@ -105,9 +105,13 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
     if (videoList.length === 1) setLoop(true);
   }, [videoList]);
 
+  const savePlaylist = () => {
+    ipcRenderer.send('saveVideoPlaylist', playlist);
+  };
+
   const startFullscreen = () => {
     if (!document.fullscreenElement)
-      videoContainer?.current?.requestFullscreen().catch((err) => {});
+      videoContainer?.current?.requestFullscreen().catch(() => {});
     videoPlayer?.current?.play();
   };
 
@@ -192,8 +196,21 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
         tabIndex={0}
       >
         <div id="popupWindowMenu" style={{ display: menu ? 'block' : 'none' }}>
-          <button type="button" onClick={closeWindow} onKeyDown={() => false}>
+          <button
+            className="close"
+            type="button"
+            onClick={closeWindow}
+            onKeyDown={() => false}
+          >
             X
+          </button>
+          <button
+            className="save"
+            type="button"
+            onClick={savePlaylist}
+            onKeyDown={() => false}
+          >
+            SAVE
           </button>
         </div>
         <div id="videLooping" style={{ display: modal ? 'flex' : 'none' }}>

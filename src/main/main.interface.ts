@@ -10,7 +10,6 @@ export interface PlaylistAttributes {
 
 export interface HttpPostPlaylist {
   list: string[];
-  save: boolean;
   title: string;
 }
 

@@ -92,9 +92,13 @@ export default function Slideshow({ playlist }: SlideshowProps) {
     if (imageTags && index > -1 && looping) slideshowPlaying();
   }, [index, looping]);
 
+  const savePlaylist = () => {
+    ipcRenderer.send('saveImagePlaylist', playlist);
+  };
+
   const startFullscreen = () => {
     if (!document.fullscreenElement)
-      imageContainer?.current?.requestFullscreen().catch(err => {});
+      imageContainer?.current?.requestFullscreen().catch(() => {});
   };
 
   const togglePlayback = () => {
@@ -250,9 +254,22 @@ export default function Slideshow({ playlist }: SlideshowProps) {
         onKeyUp={keyControls}
         tabIndex={0}
       >
-        <div id="popupWindowMenu" style={{ display: menu ? 'block' : 'none' }} >
-          <button type="button" onClick={closeWindow} onKeyDown={() => false}>
+        <div id="popupWindowMenu" style={{ display: menu ? 'block' : 'none' }}>
+          <button
+            className="close"
+            type="button"
+            onClick={closeWindow}
+            onKeyDown={() => false}
+          >
             X
+          </button>
+          <button
+            className="save"
+            type="button"
+            onClick={savePlaylist}
+            onKeyDown={() => false}
+          >
+            SAVE
           </button>
         </div>
         <div id="intervalTiming" style={{ display: modal ? 'flex' : 'none' }}>

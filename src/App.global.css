@@ -45,6 +45,19 @@ button:hover {
   transform: scale(1.05);
 }
 
+button.close,
+button.save {
+  cursor: pointer;
+  filter: drop-shadow(2px 2px 12px #000000);
+}
+
+button.save {
+  position: absolute;
+  display: block;
+  right: 0;
+  top: 0;
+}
+
 input[type='file'] {
   display: none;
 }
@@ -128,7 +141,7 @@ video:focus {
 
 #popupWindowMenu {
   position: absolute;
-  display: block;
+  display: flex;
   z-index: 9999;
   width: 100vw;
   top: 0;
@@ -143,7 +156,13 @@ video:focus {
   background-color: transparent;
 }
 
-#intervalTiming, #videLooping {
+#popupWindowMenu button.save {
+  position: absolute;
+  right: 0;
+}
+
+#intervalTiming,
+#videLooping {
   justify-content: center;
   pointer-events: none;
   align-items: center;
@@ -156,7 +175,8 @@ video:focus {
   right: 0;
 }
 
-#intervalTiming strong, #videLooping strong {
+#intervalTiming strong,
+#videLooping strong {
   display: block;
   opacity: 0.5;
   padding: 8px;
@@ -164,7 +184,7 @@ video:focus {
   border-radius: 8px;
   background-color: black;
   box-shadow: 0px 8px 28px -6px rgba(24, 39, 75, 0.12),
-  0px 18px 88px -4px rgba(24, 39, 75, 0.14);
+    0px 18px 88px -4px rgba(24, 39, 75, 0.14);
 }
 
 #imageContainer {
@@ -210,4 +230,3 @@ video#videoPlayer {
   width: 100%;
   height: 100%;
 }
-

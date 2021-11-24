@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint global-require: off, no-console: off */
+/* eslint-disable promise/always-return */
 
 /**
  * This module executes inside of electron's main process. You can start
@@ -14,7 +15,14 @@ import fs from 'fs';
 import path from 'path';
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
-import { app, BrowserWindow, ipcMain, IpcMainEvent, shell } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  IpcMainEvent,
+  shell,
+} from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import { EXPRESS_ADDRESS, EXPRESS_PORT } from './constants';
@@ -56,6 +64,46 @@ const HOME = app.getPath('home');
 const express = require('express');
 const bodyParser = require('body-parser');
 
+const playlistDir = `${HOME}/playlists/`;
+if (!fs.existsSync(playlistDir)) {
+  fs.mkdirSync(playlistDir);
+}
+const imagesPlaylistDir = `${playlistDir}images/`;
+if (!fs.existsSync(imagesPlaylistDir)) {
+  fs.mkdirSync(imagesPlaylistDir);
+}
+const videosPlaylistDir = `${playlistDir}videos/`;
+if (!fs.existsSync(videosPlaylistDir)) {
+  fs.mkdirSync(videosPlaylistDir);
+}
+
+const recentPlaylists = (type: string) => {
+  const listDirectory =
+    type === 'images' ? imagesPlaylistDir : videosPlaylistDir;
+  try {
+    const files = fs.readdirSync(listDirectory);
+    return files
+      .map((fileName) => {
+        return {
+          name: fileName,
+          time: fs.statSync(`${listDirectory}${fileName}`).mtime.getTime(),
+        };
+      })
+      .sort((a, b) => {
+        return b.time - a.time;
+      })
+      .map((file) => {
+        return file.name;
+      })
+      .filter((file) => {
+        return file.indexOf('.json') > -1;
+      });
+    throw Error('Files not found');
+  } catch (error) {
+    return [];
+  }
+};
+
 const server = express();
 server.use('/', express.static(HOME));
 server.use(bodyParser.json());
@@ -70,6 +118,14 @@ const playlistTable: MultimediaPlaylists = {
   images: {},
   videos: {},
 };
+/*
+recentPlaylists('images').forEach((fileName) => {
+  playlistTable.images[fileName.split('.json')[0]];
+});
+recentPlaylists('videos').forEach((fileName) => {
+  playlistTable.videos[fileName.split('.json')[0]];
+});
+*/
 
 const tracePlaylist = () => {
   Object.keys(playlistTable.images).forEach((timestamp) => {
@@ -98,7 +154,7 @@ server.get('/imagePlaylist/:key', async (request: any, response: any) => {
 server.post('/imagePlaylist', async (request: any, response: any) => {
   // console.log('POST /imagePlaylist', request.body);
   const timestamp = Date.now();
-  const { list, save, title }: HttpPostPlaylist = request.body;
+  const { list, title }: HttpPostPlaylist = request.body;
   playlistTable.images[timestamp] = {
     list,
     title,
@@ -131,7 +187,7 @@ server.get('/videoPlaylist/:key', async (request: any, response: any) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 server.post('/videoPlaylist', async (request: any, response: any) => {
   const timestamp = Date.now();
-  const { list, save, title }: HttpPostPlaylist = request.body;
+  const { list, title }: HttpPostPlaylist = request.body;
   playlistTable.videos[timestamp] = {
     list,
     title,
@@ -195,6 +251,10 @@ ipcMain.on('closeWindow', (_: IpcMainEvent, key: string) => {
   singleWindows[key].close();
 });
 
+ipcMain.on('loadImagePlaylist', (_: IpcMainEvent, playlist: string) => {});
+
+ipcMain.on('loadVideoPlaylist', (_: IpcMainEvent, playlist: string) => {});
+
 ipcMain.on(
   'playSlideshow',
   (_: IpcMainEvent, { list, width, height }: SlideshowPlayer) => {
@@ -246,6 +306,60 @@ ipcMain.on(
     }, 50);
   }
 );
+
+ipcMain.on('saveImagePlaylist', (_: IpcMainEvent, timestamp: string) => {
+  return dialog
+    .showSaveDialog({
+      title: 'Select the File Path to save',
+      defaultPath: `${imagesPlaylistDir}/${timestamp}.json`,
+      buttonLabel: 'Save',
+      // Restricting the user to only Text Files.
+      filters: [
+        {
+          name: 'Playlists',
+          extensions: ['json'],
+        },
+      ],
+      properties: [],
+    })
+    .then((file) => {
+      if (!file.canceled)
+        fs.writeFileSync(
+          String(file.filePath),
+          JSON.stringify(playlistTable.images[timestamp])
+        );
+    })
+    .catch((error) => {
+      console.log(error.message);
+    });
+});
+
+ipcMain.on('saveVideoPlaylist', (_: IpcMainEvent, timestamp: string) => {
+  return dialog
+    .showSaveDialog({
+      title: 'Select the File Path to save',
+      defaultPath: `${videosPlaylistDir}/${timestamp}.json`,
+      buttonLabel: 'Save',
+      // Restricting the user to only Text Files.
+      filters: [
+        {
+          name: 'Playlists',
+          extensions: ['json'],
+        },
+      ],
+      properties: [],
+    })
+    .then((file) => {
+      if (!file.canceled)
+        fs.writeFileSync(
+          String(file.filePath),
+          JSON.stringify(playlistTable.videos[timestamp])
+        );
+    })
+    .catch((error) => {
+      console.log(error.message);
+    });
+});
 
 const createWindow = async () => {
   if (
