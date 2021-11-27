@@ -164,13 +164,34 @@ const MultiMedia = () => {
   return (
     <>
       <div id="headerContainer">
-        <button type="button" onClick={() => selectFiles('video')}>
-          New Video Playlist
-        </button>
-        <span>&nbsp;&nbsp;</span>
-        <button type="button" onClick={() => selectFiles('image')}>
-          New Image Playlist
-        </button>
+        <div className="column">
+          <button type="button" onClick={() => selectFiles('video')}>
+            New Video Playlist
+          </button>
+          <button
+            type="button"
+            onClick={loadVideoPlaylist}
+            onKeyPress={() => false}
+          >
+            Open Video Playlist
+          </button>
+        </div>
+        <div className="column">
+          <button type="button" onClick={() => selectFiles('image')}>
+            New Image Playlist
+          </button>
+          <button
+            type="button"
+            onClick={loadImagePlaylist}
+            onKeyPress={() => false}
+          >
+            Open Image Playlist
+          </button>
+        </div>
+      </div>
+      <div id="imageHidden" className="hidden" ref={imageContainer} />
+      <div id="videoHidden" className="hidden" ref={videoContainer} />
+      <div id="footerContainer">
         <input
           multiple
           name="file"
@@ -179,23 +200,6 @@ const MultiMedia = () => {
           type="file"
         />
       </div>
-      <button
-        type="button"
-        onClick={loadVideoPlaylist}
-        onKeyPress={() => false}
-      >
-        Open Video Playlist
-      </button>
-      <button
-        type="button"
-        onClick={loadImagePlaylist}
-        onKeyPress={() => false}
-      >
-        Open Image Playlist
-      </button>
-      <div id="imageHidden" ref={imageContainer} />
-      <div id="videoHidden" ref={videoContainer} />
-      <div id="footerContainer" />
     </>
   );
 };

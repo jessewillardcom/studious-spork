@@ -75,7 +75,13 @@ a:hover {
 }
 
 #headerContainer {
-  flex: 2;
+  flex-direction: row;
+  display: flex;
+}
+div.column {
+  flex-direction: row;
+  display: flex;
+  flex: 1;
 }
 
 #videoContainer {
@@ -109,6 +115,11 @@ video:focus {
   z-index: -1;
 }
 
+.hidden {
+  z-index: 10000;
+  overflow: hidden;
+}
+
 #videoHidden video {
   opacity: 0;
   width: 100%;
@@ -117,7 +128,6 @@ video:focus {
 
 #imageHidden {
   position: relative;
-  z-index: -1;
 }
 
 #imageHidden img {
@@ -163,7 +173,7 @@ button.save {
   text-align: center;
   font-weight: 700;
   height: 1.5rem;
-  width: 250px;
+  width: 60%;
 }
 
 #popupWindowMenu .popup-window-layout {

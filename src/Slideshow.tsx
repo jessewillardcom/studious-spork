@@ -148,15 +148,7 @@ export default function Slideshow({ timestamp }: SlideshowProps) {
 
   const filenameBlur = () => {
     setTitleFocus(false);
-    clearTimeout(hideMenuTimeout);
-    hideMenuTimeout = setTimeout(() => {
-      hideImageMenu();
-    }, 2500);
-
-    clearTimeout(mouseMoveDebounce);
-    mouseMoveDebounce = setTimeout(() => {
-      showImageMenu();
-    }, 10);
+    setLooping(true);
   };
   const filenameFocus = () => {
     setTitleFocus(true);
@@ -295,6 +287,7 @@ export default function Slideshow({ timestamp }: SlideshowProps) {
             <input
               type="text"
               ref={fileName}
+              onMouseMove={(e) => e.stopPropagation()}
               onFocus={filenameFocus}
               onBlur={filenameBlur}
             />

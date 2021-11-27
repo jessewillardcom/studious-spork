@@ -141,15 +141,7 @@ export default function VideoPlayer({ timestamp }: VideoPlayerProps) {
 
   const filenameBlur = () => {
     setTitleFocus(false);
-    clearTimeout(hideMenuTimeout);
-    hideMenuTimeout = setTimeout(() => {
-      hideVideoMenu();
-    }, 2500);
-
-    clearTimeout(mouseMoveDebounce);
-    mouseMoveDebounce = setTimeout(() => {
-      showVideoMenu();
-    }, 10);
+    videoPlayer?.current?.play();
   };
   const filenameFocus = () => {
     setTitleFocus(true);
@@ -236,6 +228,7 @@ export default function VideoPlayer({ timestamp }: VideoPlayerProps) {
             <input
               type="text"
               ref={fileName}
+              onMouseMove={(e) => e.stopPropagation()}
               onFocus={filenameFocus}
               onBlur={filenameBlur}
             />
