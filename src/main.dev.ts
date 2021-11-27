@@ -28,9 +28,9 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import { EXPRESS_ADDRESS, EXPRESS_PORT } from './constants';
 import {
-  HttpPostPlaylist,
   MultimediaPlaylists,
   MultiVideoPlayer,
+  PlaylistProps,
   SlideshowPlayer,
 } from './main/main.interface';
 import MenuBuilder from './menu';
@@ -178,15 +178,17 @@ server.get('/imagePlaylist/:key', async (request: any, response: any) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 server.post('/imagePlaylist', async (request: any, response: any) => {
   const timestamp = Date.now();
-  const { list, title }: HttpPostPlaylist = request.body;
+  const { list, title }: PlaylistProps = request.body;
   playlistTable.images[timestamp] = {
     list,
+    timestamp,
     title,
   };
   response.json({
     saved: [],
     success: true,
     timestamp,
+    title,
   });
 });
 
@@ -199,15 +201,17 @@ server.get('/videoPlaylist/:key', async (request: any, response: any) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 server.post('/videoPlaylist', async (request: any, response: any) => {
   const timestamp = Date.now();
-  const { list, title }: HttpPostPlaylist = request.body;
+  const { list, title }: PlaylistProps = request.body;
   playlistTable.videos[timestamp] = {
     list,
+    timestamp,
     title,
   };
   response.json({
     saved: [],
     success: true,
     timestamp,
+    title,
   });
 });
 

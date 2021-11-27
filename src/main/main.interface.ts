@@ -1,15 +1,11 @@
 export interface MultimediaPlaylists {
-  images: Record<string, PlaylistAttributes>;
-  videos: Record<string, PlaylistAttributes>;
+  images: Record<string, PlaylistProps>;
+  videos: Record<string, PlaylistProps>;
 }
 
-export interface PlaylistAttributes {
+export interface PlaylistProps {
   list: string[];
-  title: string;
-}
-
-export interface HttpPostPlaylist {
-  list: string[];
+  timestamp: number;
   title: string;
 }
 

@@ -20,6 +20,7 @@ interface SlideshowProps {
 
 export default function Slideshow({ playlist }: SlideshowProps) {
   const imageContainer = useRef<HTMLDivElement | never>(null);
+  const imagePlayer = useRef<HTMLDivElement | never>(null);
   const fileName = useRef<HTMLInputElement | never>(null);
   const [titleFocus, setTitleFocus] = useState(false);
 
@@ -120,7 +121,7 @@ export default function Slideshow({ playlist }: SlideshowProps) {
     nextImage();
   };
 
-  const descreaseSpeed = () => {
+  const decreaseSpeed = () => {
     clearInterval(slideshowTimout);
     setTiming(timing + STEPPED_INTERVAL);
     clearTimeout(hideModalTimeout);
@@ -182,8 +183,8 @@ export default function Slideshow({ playlist }: SlideshowProps) {
           break;
         }
         case 38: {
-          // console.log('UP');
-          increaseSpeed();
+          // console.log('DOWN');
+          decreaseSpeed();
           break;
         }
         case 39: {
@@ -192,8 +193,8 @@ export default function Slideshow({ playlist }: SlideshowProps) {
           break;
         }
         case 40: {
-          // console.log('DOWN');
-          descreaseSpeed();
+          // console.log('UP');
+          increaseSpeed();
           break;
         }
         default:
@@ -217,7 +218,7 @@ export default function Slideshow({ playlist }: SlideshowProps) {
         } else {
           imageNode.classList.add('hide');
         }
-        imageContainer?.current?.appendChild(imageNode);
+        imagePlayer?.current?.appendChild(imageNode);
         return imageNode;
       })
     );
@@ -312,6 +313,7 @@ export default function Slideshow({ playlist }: SlideshowProps) {
             <strong>Playback {(timing / 1000).toFixed(1)} sec</strong>
           )}
         </div>
+        <div id="imagePlayer" ref={imagePlayer} />
       </div>
     </>
   );
