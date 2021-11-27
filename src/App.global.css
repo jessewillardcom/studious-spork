@@ -45,19 +45,6 @@ button:hover {
   transform: scale(1.05);
 }
 
-button.close,
-button.save {
-  cursor: pointer;
-  filter: drop-shadow(2px 2px 12px #000000);
-}
-
-button.save {
-  position: absolute;
-  display: block;
-  right: 0;
-  top: 0;
-}
-
 input[type='file'] {
   display: none;
 }
@@ -141,24 +128,50 @@ video:focus {
 
 #popupWindowMenu {
   position: absolute;
-  display: flex;
+  display: block;
   z-index: 9999;
+  height: 2rem;
   width: 100vw;
   top: 0;
   left: 0;
 }
 
 #popupWindowMenu button {
-  color: white;
+  cursor: pointer;
   font-weight: 700;
   margin: 5px;
   padding: 10px 15px;
+  color: rgba(255, 255, 255, 0.8);
   background-color: transparent;
 }
 
-#popupWindowMenu button.save {
-  position: absolute;
-  right: 0;
+button.close {
+  width: 60px;
+}
+
+button.close,
+button.save {
+  filter: drop-shadow(2px 2px 12px #000000);
+  position: relative;
+  height: 3rem;
+  top: 0;
+}
+
+#popupWindowMenu input {
+  background-color: rgba(255, 255, 255, 0.8);
+  margin: 1rem 0 0 0.5rem;
+  text-align: center;
+  font-weight: 700;
+  height: 1.5rem;
+  width: 250px;
+}
+
+#popupWindowMenu .popup-window-layout {
+  justify-content: space-between;
+  align-content: flex-start;
+  position: relative;
+  display: flex;
+  top: 0;
 }
 
 #intervalTiming,

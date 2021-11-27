@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint global-require: off, no-console: off */
 /* eslint-disable promise/always-return */
@@ -59,6 +60,7 @@ const allSavedVideoPlaylists = (): string[] => {
   return playlistArray;
 };
 */
+
 // Serves files in the /User/ folder
 const HOME = app.getPath('home');
 const express = require('express');
@@ -76,7 +78,6 @@ const videosPlaylistDir = `${playlistDir}videos/`;
 if (!fs.existsSync(videosPlaylistDir)) {
   fs.mkdirSync(videosPlaylistDir);
 }
-
 const recentPlaylists = (type: string) => {
   const listDirectory =
     type === 'images' ? imagesPlaylistDir : videosPlaylistDir;
@@ -104,6 +105,45 @@ const recentPlaylists = (type: string) => {
   }
 };
 
+console.log('---------------------------------------');
+
+const RECENT_PLAYLISTS = 10;
+const imageRecentLists = recentPlaylists('images')
+  .filter((_, n) => n < RECENT_PLAYLISTS)
+  .map((fileName, n) => {
+    const fileContents: Buffer = fs.readFileSync(
+      `${imagesPlaylistDir}${fileName}`
+    );
+    const { list, title } = JSON.parse(fileContents.toString());
+    return {
+      list,
+      title,
+    };
+  });
+
+imageRecentLists.forEach((recent) => {
+  console.log(recent.title);
+  console.log(recent.list);
+});
+
+const videoRecentLists = recentPlaylists('videos')
+  .filter((_, n) => n < RECENT_PLAYLISTS)
+  .map((fileName) => {
+    const fileContents: Buffer = fs.readFileSync(
+      `${videosPlaylistDir}${fileName}`
+    );
+    const { list, title } = JSON.parse(fileContents.toString());
+    return {
+      list,
+      title,
+    };
+  });
+
+videoRecentLists.forEach((recent) => {
+  console.log(recent.title);
+  console.log(recent.list);
+});
+
 const server = express();
 server.use('/', express.static(HOME));
 server.use(bodyParser.json());
@@ -118,14 +158,6 @@ const playlistTable: MultimediaPlaylists = {
   images: {},
   videos: {},
 };
-/*
-recentPlaylists('images').forEach((fileName) => {
-  playlistTable.images[fileName.split('.json')[0]];
-});
-recentPlaylists('videos').forEach((fileName) => {
-  playlistTable.videos[fileName.split('.json')[0]];
-});
-*/
 
 const tracePlaylist = () => {
   Object.keys(playlistTable.images).forEach((timestamp) => {
@@ -136,13 +168,6 @@ const tracePlaylist = () => {
   });
 };
 
-// const saveImagePlaylist = (passedKey: number) => {
-//   const filename = `${passedKey}.json`;
-//   fs.writeFileSync(
-//     path.resolve(IMAGE_PLAYLIST, filename),
-//     JSON.stringify(playlistTable.images[passedKey])
-//   );
-// };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 server.get('/imagePlaylist/:key', async (request: any, response: any) => {
   const { key } = request.params;
@@ -152,16 +177,12 @@ server.get('/imagePlaylist/:key', async (request: any, response: any) => {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 server.post('/imagePlaylist', async (request: any, response: any) => {
-  // console.log('POST /imagePlaylist', request.body);
   const timestamp = Date.now();
   const { list, title }: HttpPostPlaylist = request.body;
   playlistTable.images[timestamp] = {
     list,
     title,
   };
-  // if (save === true) saveImagePlaylist(timestamp);
-  // savedImagePlaylists = allSavedVideoPlaylists();
-  // tracePlaylist();
   response.json({
     saved: [],
     success: true,
@@ -169,18 +190,9 @@ server.post('/imagePlaylist', async (request: any, response: any) => {
   });
 });
 
-// const saveVideoPlaylist = (passedKey: number) => {
-//   const filename = `${passedKey}.json`;
-//   fs.writeFileSync(
-//     path.resolve(VIDEO_PLAYLIST, filename),
-//     JSON.stringify(playlistTable.videos[passedKey])
-//   );
-// };
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 server.get('/videoPlaylist/:key', async (request: any, response: any) => {
   const { key } = request.params;
-  // console.log('/videoPlaylist/:key', key);
   response.json(playlistTable.videos[key].list);
 });
 
@@ -192,9 +204,6 @@ server.post('/videoPlaylist', async (request: any, response: any) => {
     list,
     title,
   };
-  // if (save === true) saveVideoPlaylist(timestamp);
-  // savedVideoPlaylists = allSavedVideoPlaylists();
-  // tracePlaylist();
   response.json({
     saved: [],
     success: true,
@@ -251,9 +260,33 @@ ipcMain.on('closeWindow', (_: IpcMainEvent, key: string) => {
   singleWindows[key].close();
 });
 
-ipcMain.on('loadImagePlaylist', (_: IpcMainEvent, playlist: string) => {});
+ipcMain.on('loadImagePlaylist', (_: IpcMainEvent, playlist: string) => {
+  dialog
+    .showOpenDialog(mainWindow!, {
+      defaultPath: imagesPlaylistDir,
+      filters: [{ name: 'json', extensions: ['json'] }],
+      properties: ['openFile'],
+      title: 'Select a playlist to open',
+    })
+    .then((file) => {
+      console.log(file.filePaths);
+    })
+    .catch(() => {});
+});
 
-ipcMain.on('loadVideoPlaylist', (_: IpcMainEvent, playlist: string) => {});
+ipcMain.on('loadVideoPlaylist', (_: IpcMainEvent, playlist: string) => {
+  dialog
+    .showOpenDialog(mainWindow!, {
+      defaultPath: videosPlaylistDir,
+      filters: [{ name: 'json', extensions: ['json'] }],
+      properties: ['openFile'],
+      title: 'Select a playlist to open',
+    })
+    .then((file) => {
+      console.log(file.filePaths);
+    })
+    .catch(() => {});
+});
 
 ipcMain.on(
   'playSlideshow',
@@ -307,13 +340,12 @@ ipcMain.on(
   }
 );
 
-ipcMain.on('saveImagePlaylist', (_: IpcMainEvent, timestamp: string) => {
+const savePlaylist = (directory: string, playlist: Record<string, string>) => {
   return dialog
     .showSaveDialog({
       title: 'Select the File Path to save',
-      defaultPath: `${imagesPlaylistDir}/${timestamp}.json`,
+      defaultPath: `${directory}/${playlist.title}.json`,
       buttonLabel: 'Save',
-      // Restricting the user to only Text Files.
       filters: [
         {
           name: 'Playlists',
@@ -324,42 +356,26 @@ ipcMain.on('saveImagePlaylist', (_: IpcMainEvent, timestamp: string) => {
     })
     .then((file) => {
       if (!file.canceled)
-        fs.writeFileSync(
-          String(file.filePath),
-          JSON.stringify(playlistTable.images[timestamp])
-        );
+        fs.writeFileSync(String(file.filePath), JSON.stringify(playlist));
     })
     .catch((error) => {
       console.log(error.message);
     });
-});
+};
 
-ipcMain.on('saveVideoPlaylist', (_: IpcMainEvent, timestamp: string) => {
-  return dialog
-    .showSaveDialog({
-      title: 'Select the File Path to save',
-      defaultPath: `${videosPlaylistDir}/${timestamp}.json`,
-      buttonLabel: 'Save',
-      // Restricting the user to only Text Files.
-      filters: [
-        {
-          name: 'Playlists',
-          extensions: ['json'],
-        },
-      ],
-      properties: [],
-    })
-    .then((file) => {
-      if (!file.canceled)
-        fs.writeFileSync(
-          String(file.filePath),
-          JSON.stringify(playlistTable.videos[timestamp])
-        );
-    })
-    .catch((error) => {
-      console.log(error.message);
-    });
-});
+ipcMain.on(
+  'saveImagePlaylist',
+  (_: IpcMainEvent, playlist: Record<string, string>) => {
+    savePlaylist(imagesPlaylistDir, playlist);
+  }
+);
+
+ipcMain.on(
+  'saveVideoPlaylist',
+  (_: IpcMainEvent, playlist: Record<string, string>) => {
+    savePlaylist(videosPlaylistDir, playlist);
+  }
+);
 
 const createWindow = async () => {
   if (

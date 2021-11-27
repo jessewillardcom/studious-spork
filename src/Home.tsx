@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useRef, useState } from 'react';
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 import { ipcRenderer } from 'electron';
@@ -40,6 +41,14 @@ const MultiMedia = () => {
       if (fileType === 'image') setImageList(urlPaths);
       if (fileType === 'video') setVideoList(urlPaths);
     }
+  };
+
+  const loadImagePlaylist = () => {
+    ipcRenderer.send('loadImagePlaylist');
+  };
+
+  const loadVideoPlaylist = () => {
+    ipcRenderer.send('loadVideoPlaylist');
   };
 
   const postPlaylist = async (list: string[], endpoint: string) => {
@@ -98,7 +107,6 @@ const MultiMedia = () => {
 
   useEffect(() => {
     if (imageList.length > 0) playImages();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imageList]);
 
   // --[VIDEO FUNCTIONALITY]---------------------------------------
@@ -144,7 +152,6 @@ const MultiMedia = () => {
 
   useEffect(() => {
     if (videoList.length > 0) playVideos();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoList]);
 
   useEffect(() => {
@@ -152,18 +159,17 @@ const MultiMedia = () => {
       removeImageNodes();
       removeVideoNodes();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <>
       <div id="headerContainer">
         <button type="button" onClick={() => selectFiles('video')}>
-          Video Playlist
+          New Video Playlist
         </button>
         <span>&nbsp;&nbsp;</span>
         <button type="button" onClick={() => selectFiles('image')}>
-          Image Playlist
+          New Image Playlist
         </button>
         <input
           multiple
@@ -173,6 +179,20 @@ const MultiMedia = () => {
           type="file"
         />
       </div>
+      <button
+        type="button"
+        onClick={loadVideoPlaylist}
+        onKeyPress={() => false}
+      >
+        Open Video Playlist
+      </button>
+      <button
+        type="button"
+        onClick={loadImagePlaylist}
+        onKeyPress={() => false}
+      >
+        Open Image Playlist
+      </button>
       <div id="imageHidden" ref={imageContainer} />
       <div id="videoHidden" ref={videoContainer} />
       <div id="footerContainer" />

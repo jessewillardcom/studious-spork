@@ -20,6 +20,8 @@ interface SlideshowProps {
 
 export default function Slideshow({ playlist }: SlideshowProps) {
   const imageContainer = useRef<HTMLDivElement | never>(null);
+  const fileName = useRef<HTMLInputElement | never>(null);
+  const [titleFocus, setTitleFocus] = useState(false);
 
   const closeWindow = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -93,7 +95,10 @@ export default function Slideshow({ playlist }: SlideshowProps) {
   }, [index, looping]);
 
   const savePlaylist = () => {
-    ipcRenderer.send('saveImagePlaylist', playlist);
+    ipcRenderer.send('saveImagePlaylist', {
+      list: imageList,
+      title: fileName?.current?.value || playlist,
+    });
   };
 
   const startFullscreen = () => {
@@ -139,40 +144,61 @@ export default function Slideshow({ playlist }: SlideshowProps) {
     }
   };
 
+  const filenameBlur = () => {
+    setTitleFocus(false);
+    clearTimeout(hideMenuTimeout);
+    hideMenuTimeout = setTimeout(() => {
+      hideImageMenu();
+    }, 2500);
+
+    clearTimeout(mouseMoveDebounce);
+    mouseMoveDebounce = setTimeout(() => {
+      showImageMenu();
+    }, 10);
+  };
+  const filenameFocus = () => {
+    setTitleFocus(true);
+    clearTimeout(hideMenuTimeout);
+    clearTimeout(mouseMoveDebounce);
+    setLooping(false);
+  };
+
   const keyControls = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    switch (e.keyCode) {
-      case 13: {
-        // console.log('ENTER');
-        startFullscreen();
-        break;
+    if (!titleFocus) {
+      switch (e.keyCode) {
+        case 13: {
+          // console.log('ENTER');
+          startFullscreen();
+          break;
+        }
+        case 32: {
+          // console.log('SPACE');
+          togglePlayback();
+          break;
+        }
+        case 37: {
+          // console.log('RIGHT');
+          slidePrev();
+          break;
+        }
+        case 38: {
+          // console.log('UP');
+          increaseSpeed();
+          break;
+        }
+        case 39: {
+          // console.log('LEFT');
+          slideNext();
+          break;
+        }
+        case 40: {
+          // console.log('DOWN');
+          descreaseSpeed();
+          break;
+        }
+        default:
+        // console.log(e.keyCode);
       }
-      case 32: {
-        // console.log('SPACE');
-        togglePlayback();
-        break;
-      }
-      case 37: {
-        // console.log('RIGHT');
-        slidePrev();
-        break;
-      }
-      case 38: {
-        // console.log('UP');
-        increaseSpeed();
-        break;
-      }
-      case 39: {
-        // console.log('LEFT');
-        slideNext();
-        break;
-      }
-      case 40: {
-        // console.log('DOWN');
-        descreaseSpeed();
-        break;
-      }
-      default:
-      // console.log(e.keyCode);
     }
   };
 
@@ -255,22 +281,30 @@ export default function Slideshow({ playlist }: SlideshowProps) {
         tabIndex={0}
       >
         <div id="popupWindowMenu" style={{ display: menu ? 'block' : 'none' }}>
-          <button
-            className="close"
-            type="button"
-            onClick={closeWindow}
-            onKeyDown={() => false}
-          >
-            X
-          </button>
-          <button
-            className="save"
-            type="button"
-            onClick={savePlaylist}
-            onKeyDown={() => false}
-          >
-            SAVE
-          </button>
+          <div className="popup-window-layout">
+            <button
+              className="close"
+              type="button"
+              onClick={closeWindow}
+              onKeyDown={() => false}
+            >
+              X
+            </button>
+            <input
+              type="text"
+              ref={fileName}
+              onFocus={filenameFocus}
+              onBlur={filenameBlur}
+            />
+            <button
+              className="save"
+              type="button"
+              onClick={savePlaylist}
+              onKeyDown={() => false}
+            >
+              SAVE
+            </button>
+          </div>
         </div>
         <div id="intervalTiming" style={{ display: modal ? 'flex' : 'none' }}>
           {!looping && <strong>Playback stopped</strong>}

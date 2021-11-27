@@ -23,6 +23,8 @@ interface VideoPlayerProps {
 export default function VideoPlayer({ playlist }: VideoPlayerProps) {
   const videoContainer = useRef<HTMLDivElement | never>(null);
   const videoPlayer = useRef<HTMLVideoElement | never>(null);
+  const fileName = useRef<HTMLInputElement | never>(null);
+  const [titleFocus, setTitleFocus] = useState(false);
 
   const closeWindow = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -106,7 +108,10 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
   }, [videoList]);
 
   const savePlaylist = () => {
-    ipcRenderer.send('saveVideoPlaylist', playlist);
+    ipcRenderer.send('saveVideoPlaylist', {
+      list: videoList,
+      title: fileName?.current?.value || playlist,
+    });
   };
 
   const startFullscreen = () => {
@@ -133,35 +138,57 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
     showVideoModal();
   }, [looping]);
 
+  const filenameBlur = () => {
+    setTitleFocus(false);
+    clearTimeout(hideMenuTimeout);
+    hideMenuTimeout = setTimeout(() => {
+      hideVideoMenu();
+    }, 2500);
+
+    clearTimeout(mouseMoveDebounce);
+    mouseMoveDebounce = setTimeout(() => {
+      showVideoMenu();
+    }, 10);
+  };
+  const filenameFocus = () => {
+    setTitleFocus(true);
+    clearTimeout(hideMenuTimeout);
+    clearTimeout(mouseMoveDebounce);
+    videoPlayer?.current?.pause();
+  };
+
   const keyControls = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    switch (e.keyCode) {
-      case 13: {
-        // console.log('ENTER');
-        startFullscreen();
-        break;
+    e.stopPropagation();
+    if (!titleFocus) {
+      switch (e.keyCode) {
+        case 13: {
+          // console.log('ENTER');
+          startFullscreen();
+          break;
+        }
+        case 32: {
+          // console.log('SPACE');
+          togglePlaying();
+          break;
+        }
+        case 76: {
+          // console.log('L');
+          toggleLooping();
+          break;
+        }
+        case 37: {
+          // console.log('RIGHT');
+          prevVideo();
+          break;
+        }
+        case 39: {
+          // console.log('LEFT');
+          nextVideo();
+          break;
+        }
+        default:
+          console.log(e.keyCode);
       }
-      case 32: {
-        // console.log('SPACE');
-        togglePlaying();
-        break;
-      }
-      case 76: {
-        // console.log('L');
-        toggleLooping();
-        break;
-      }
-      case 37: {
-        // console.log('RIGHT');
-        prevVideo();
-        break;
-      }
-      case 39: {
-        // console.log('LEFT');
-        nextVideo();
-        break;
-      }
-      default:
-        console.log(e.keyCode);
     }
   };
 
@@ -196,22 +223,30 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
         tabIndex={0}
       >
         <div id="popupWindowMenu" style={{ display: menu ? 'block' : 'none' }}>
-          <button
-            className="close"
-            type="button"
-            onClick={closeWindow}
-            onKeyDown={() => false}
-          >
-            X
-          </button>
-          <button
-            className="save"
-            type="button"
-            onClick={savePlaylist}
-            onKeyDown={() => false}
-          >
-            SAVE
-          </button>
+          <div className="popup-window-layout">
+            <button
+              className="close"
+              type="button"
+              onClick={closeWindow}
+              onKeyDown={() => false}
+            >
+              X
+            </button>
+            <input
+              type="text"
+              ref={fileName}
+              onFocus={filenameFocus}
+              onBlur={filenameBlur}
+            />
+            <button
+              className="save"
+              type="button"
+              onClick={savePlaylist}
+              onKeyDown={() => false}
+            >
+              SAVE
+            </button>
+          </div>
         </div>
         <div id="videLooping" style={{ display: modal ? 'flex' : 'none' }}>
           {looping && <strong>Repeat stopped</strong>}
