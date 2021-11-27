@@ -15,10 +15,10 @@ const HIDE_MENU_TIMEOUT = 2500;
 const HIDE_MODAL_TIMEOUT = 500;
 
 interface SlideshowProps {
-  playlist: string;
+  timestamp: string;
 }
 
-export default function Slideshow({ playlist }: SlideshowProps) {
+export default function Slideshow({ timestamp }: SlideshowProps) {
   const imageContainer = useRef<HTMLDivElement | never>(null);
   const imagePlayer = useRef<HTMLDivElement | never>(null);
   const fileName = useRef<HTMLInputElement | never>(null);
@@ -26,7 +26,7 @@ export default function Slideshow({ playlist }: SlideshowProps) {
 
   const closeWindow = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    ipcRenderer.send('closeWindow', playlist);
+    ipcRenderer.send('closeWindow', timestamp);
   };
 
   // NOTE:: This hides the menu and allows window to close
@@ -98,7 +98,8 @@ export default function Slideshow({ playlist }: SlideshowProps) {
   const savePlaylist = () => {
     ipcRenderer.send('saveImagePlaylist', {
       list: imageList,
-      title: fileName?.current?.value || playlist,
+      timestamp,
+      title: fileName?.current?.value || timestamp,
     });
   };
 
@@ -225,8 +226,8 @@ export default function Slideshow({ playlist }: SlideshowProps) {
   };
 
   useEffect(() => {
-    if (playlist !== '' && imageList.length === 0) {
-      fetch(`${SERVER}/imagePlaylist/${playlist}`)
+    if (timestamp !== '' && imageList.length === 0) {
+      fetch(`${SERVER}/imagePlaylist/${timestamp}`)
         .then((response) => response.json())
         .then((json) => {
           console.log('fetched', json);
@@ -235,7 +236,7 @@ export default function Slideshow({ playlist }: SlideshowProps) {
         })
         .catch(() => console.error);
     }
-  }, [playlist]);
+  }, [timestamp]);
 
   useEffect(() => {
     if (imageList.length > 0) {

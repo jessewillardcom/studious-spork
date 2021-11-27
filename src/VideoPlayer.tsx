@@ -17,10 +17,10 @@ const videoAttributes = {
 };
 
 interface VideoPlayerProps {
-  playlist: string;
+  timestamp: string;
 }
 
-export default function VideoPlayer({ playlist }: VideoPlayerProps) {
+export default function VideoPlayer({ timestamp }: VideoPlayerProps) {
   const videoContainer = useRef<HTMLDivElement | never>(null);
   const videoPlayer = useRef<HTMLVideoElement | never>(null);
   const fileName = useRef<HTMLInputElement | never>(null);
@@ -28,7 +28,7 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
 
   const closeWindow = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    ipcRenderer.send('closeWindow', playlist);
+    ipcRenderer.send('closeWindow', timestamp);
   };
 
   // NOTE:: This hides the menu and allows window to close
@@ -73,7 +73,7 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
   };
 
   const prevVideo = () => {
-    if (playlist.length > 1) setIndex(prevIndex());
+    if (timestamp.length > 1) setIndex(prevIndex());
   };
 
   const nextIndex = () => {
@@ -81,7 +81,7 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
   };
 
   const nextVideo = () => {
-    if (playlist.length > 1) setIndex(nextIndex());
+    if (timestamp.length > 1) setIndex(nextIndex());
   };
 
   useEffect(() => {
@@ -91,8 +91,8 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
   }, [index]);
 
   useEffect(() => {
-    if (playlist !== '' && videoPlayer?.current !== null) {
-      fetch(`${SERVER}/videoPlaylist/${playlist}`)
+    if (timestamp !== '' && videoPlayer?.current !== null) {
+      fetch(`${SERVER}/videoPlaylist/${timestamp}`)
         .then((response) => response.json())
         .then((json) => {
           setVideoList(json);
@@ -101,7 +101,7 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
         })
         .catch(() => console.error);
     }
-  }, [playlist]);
+  }, [timestamp]);
 
   useEffect(() => {
     if (videoList.length === 1) setLoop(true);
@@ -110,7 +110,8 @@ export default function VideoPlayer({ playlist }: VideoPlayerProps) {
   const savePlaylist = () => {
     ipcRenderer.send('saveVideoPlaylist', {
       list: videoList,
-      title: fileName?.current?.value || playlist,
+      timestamp,
+      title: fileName?.current?.value || timestamp,
     });
   };
 

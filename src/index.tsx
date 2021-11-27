@@ -10,11 +10,11 @@ const view = queryString.get('view');
 
 switch (view) {
   case 'Slideshow': {
-    render(<Slideshow playlist={list} />, document.getElementById('root'));
+    render(<Slideshow timestamp={list} />, document.getElementById('root'));
     break;
   }
   case 'VideoMulti': {
-    render(<VideoPlayer playlist={list} />, document.getElementById('root'));
+    render(<VideoPlayer timestamp={list} />, document.getElementById('root'));
     break;
   }
   default:

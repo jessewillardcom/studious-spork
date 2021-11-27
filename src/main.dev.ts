@@ -32,7 +32,7 @@ import {
   MultiVideoPlayer,
   PlaylistProps,
   SlideshowPlayer,
-} from './main/main.interface';
+} from './_interfaces/main.interface';
 import MenuBuilder from './menu';
 
 // Create playlists directory if one doesn't already exist
@@ -114,16 +114,18 @@ const imageRecentLists = recentPlaylists('images')
     const fileContents: Buffer = fs.readFileSync(
       `${imagesPlaylistDir}${fileName}`
     );
-    const { list, title } = JSON.parse(fileContents.toString());
+    const { list, timestamp, title } = JSON.parse(fileContents.toString());
     return {
       list,
+      timestamp,
       title,
     };
   });
 
 imageRecentLists.forEach((recent) => {
-  console.log(recent.title);
   console.log(recent.list);
+  console.log(recent.title);
+  console.log(recent.timestamp);
 });
 
 const videoRecentLists = recentPlaylists('videos')
@@ -132,16 +134,18 @@ const videoRecentLists = recentPlaylists('videos')
     const fileContents: Buffer = fs.readFileSync(
       `${videosPlaylistDir}${fileName}`
     );
-    const { list, title } = JSON.parse(fileContents.toString());
+    const { list, timestamp, title } = JSON.parse(fileContents.toString());
     return {
       list,
+      timestamp,
       title,
     };
   });
 
 videoRecentLists.forEach((recent) => {
-  console.log(recent.title);
   console.log(recent.list);
+  console.log(recent.title);
+  console.log(recent.timestamp);
 });
 
 const server = express();
@@ -264,87 +268,116 @@ ipcMain.on('closeWindow', (_: IpcMainEvent, key: string) => {
   singleWindows[key].close();
 });
 
-ipcMain.on('loadImagePlaylist', (_: IpcMainEvent, playlist: string) => {
-  dialog
-    .showOpenDialog(mainWindow!, {
-      defaultPath: imagesPlaylistDir,
-      filters: [{ name: 'json', extensions: ['json'] }],
-      properties: ['openFile'],
-      title: 'Select a playlist to open',
-    })
-    .then((file) => {
-      console.log(file.filePaths);
-    })
-    .catch(() => {});
-});
-
-ipcMain.on('loadVideoPlaylist', (_: IpcMainEvent, playlist: string) => {
-  dialog
-    .showOpenDialog(mainWindow!, {
-      defaultPath: videosPlaylistDir,
-      filters: [{ name: 'json', extensions: ['json'] }],
-      properties: ['openFile'],
-      title: 'Select a playlist to open',
-    })
-    .then((file) => {
-      console.log(file.filePaths);
-    })
-    .catch(() => {});
-});
+const playSlideshow = (list: string, width: number, height: number) => {
+  if (singleWindows[list] !== undefined) singleWindows[list].close();
+  clearTimeout(debounceImageEvent);
+  debounceImageEvent = setTimeout(() => {
+    singleWindows[list] = new BrowserWindow({
+      width,
+      height,
+      frame: false,
+      webPreferences: {
+        devTools: false,
+        nodeIntegration: true,
+      },
+    });
+    singleWindows[list].loadURL(
+      `file://${__dirname}/index.html?view=Slideshow&list=${list}`
+    );
+    singleWindows[list].focus();
+    singleWindows[list].on('close', () => {
+      delete singleWindows[list];
+    });
+  }, 100);
+};
 
 ipcMain.on(
   'playSlideshow',
   (_: IpcMainEvent, { list, width, height }: SlideshowPlayer) => {
-    if (singleWindows[list] !== undefined) singleWindows[list].close();
-    clearTimeout(debounceImageEvent);
-    debounceImageEvent = setTimeout(() => {
-      singleWindows[list] = new BrowserWindow({
-        width,
-        height,
-        frame: false,
-        webPreferences: {
-          devTools: false,
-          nodeIntegration: true,
-        },
-      });
-      singleWindows[list].loadURL(
-        `file://${__dirname}/index.html?view=Slideshow&list=${list}`
-      );
-      singleWindows[list].focus();
-      singleWindows[list].on('close', () => {
-        delete singleWindows[list];
-      });
-    }, 100);
+    playSlideshow(list, width, height);
   }
 );
+
+ipcMain.on('loadImagePlaylist', (_: IpcMainEvent, playlist: string) => {
+  if (playlist) {
+    console.log('Add support for recently opened items');
+  } else {
+    dialog
+      .showOpenDialog(mainWindow!, {
+        defaultPath: imagesPlaylistDir,
+        filters: [{ name: 'json', extensions: ['json'] }],
+        properties: ['openFile'],
+        title: 'Select a playlist to open',
+      })
+      .then((file) => {
+        console.log('Opening >>>>', file.filePaths);
+        file.filePaths.forEach((filePath) => {
+          const buffer = fs.readFileSync(filePath);
+          const data = JSON.parse(buffer.toString());
+          playlistTable.images[data.timestamp] = data;
+          playSlideshow(data.timestamp, 640, 480);
+        });
+      })
+      .catch(() => {});
+  }
+});
+
+const playVideoMulti = (list: string, width: number, height: number) => {
+  if (singleWindows[list] !== undefined) singleWindows[list].close();
+  clearTimeout(debounceVideoEvent);
+  debounceVideoEvent = setTimeout(() => {
+    singleWindows[list] = new BrowserWindow({
+      width,
+      height,
+      frame: false,
+      webPreferences: {
+        devTools: false,
+        nodeIntegration: true,
+      },
+    });
+    singleWindows[list].loadURL(
+      `file://${__dirname}/index.html?view=VideoMulti&list=${list}`
+    );
+    singleWindows[list].focus();
+    singleWindows[list].on('close', () => {
+      delete singleWindows[list];
+    });
+  }, 50);
+};
 
 ipcMain.on(
   'playVideoMulti',
   (_: IpcMainEvent, { list, width, height }: MultiVideoPlayer) => {
-    if (singleWindows[list] !== undefined) singleWindows[list].close();
-    clearTimeout(debounceVideoEvent);
-    debounceVideoEvent = setTimeout(() => {
-      singleWindows[list] = new BrowserWindow({
-        width,
-        height,
-        frame: false,
-        webPreferences: {
-          devTools: false,
-          nodeIntegration: true,
-        },
-      });
-      singleWindows[list].loadURL(
-        `file://${__dirname}/index.html?view=VideoMulti&list=${list}`
-      );
-      singleWindows[list].focus();
-      singleWindows[list].on('close', () => {
-        delete singleWindows[list];
-      });
-    }, 50);
+    playVideoMulti(list, width, height);
   }
 );
 
+ipcMain.on('loadVideoPlaylist', (_: IpcMainEvent, playlist: string) => {
+  if (playlist) {
+    console.log('Add support for recently opened items');
+  } else {
+    dialog
+      .showOpenDialog(mainWindow!, {
+        defaultPath: videosPlaylistDir,
+        filters: [{ name: 'json', extensions: ['json'] }],
+        properties: ['openFile'],
+        title: 'Select a playlist to open',
+      })
+      .then((file) => {
+        console.log('Opening >>>>', file.filePaths);
+        file.filePaths.forEach((filePath) => {
+          const buffer = fs.readFileSync(filePath);
+          const data = JSON.parse(buffer.toString());
+          playlistTable.videos[data.timestamp] = data;
+          playVideoMulti(data.timestamp, 640, 480);
+        });
+      })
+      .catch(() => {});
+  }
+});
+
 const savePlaylist = (directory: string, playlist: Record<string, string>) => {
+  console.log('savePlaylist >>>', JSON.stringify(playlist));
   return dialog
     .showSaveDialog({
       title: 'Select the File Path to save',
