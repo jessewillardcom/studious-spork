@@ -109,7 +109,7 @@ export default function VideoPlayer({ timestamp }: VideoPlayerProps) {
 
   const savePlaylist = () => {
     ipcRenderer.send('saveVideoPlaylist', {
-      list: videoList,
+      playlist: videoList,
       timestamp,
       title: fileName?.current?.value || timestamp,
     });

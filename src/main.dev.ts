@@ -24,15 +24,17 @@ import {
   IpcMainEvent,
   shell,
 } from 'electron';
-import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
-import { EXPRESS_ADDRESS, EXPRESS_PORT } from './constants';
+import { autoUpdater } from 'electron-updater';
+import express, { Request, Response } from 'express';
+import bodyParser from 'body-parser';
 import {
   MultimediaPlaylists,
   MultiVideoPlayer,
   PlaylistProps,
   SlideshowPlayer,
 } from './_interfaces/main.interface';
+import { EXPRESS_ADDRESS, EXPRESS_PORT } from './constants';
 import MenuBuilder from './menu';
 
 // Create playlists directory if one doesn't already exist
@@ -63,8 +65,6 @@ const allSavedVideoPlaylists = (): string[] => {
 
 // Serves files in the /User/ folder
 const HOME = app.getPath('home');
-const express = require('express');
-const bodyParser = require('body-parser');
 
 const playlistDir = `${HOME}/playlists/`;
 if (!fs.existsSync(playlistDir)) {
@@ -110,7 +110,7 @@ console.log('---------------------------------------');
 const RECENT_PLAYLISTS = 10;
 const imageRecentLists = recentPlaylists('images')
   .filter((_, n) => n < RECENT_PLAYLISTS)
-  .map((fileName, n) => {
+  .map((fileName) => {
     const fileContents: Buffer = fs.readFileSync(
       `${imagesPlaylistDir}${fileName}`
     );
@@ -173,18 +173,22 @@ const tracePlaylist = () => {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-server.get('/imagePlaylist/:key', async (request: any, response: any) => {
-  const { key } = request.params;
-  // console.log('/imagePlaylist/:key', key);
-  response.json(playlistTable.images[key].list);
-});
+server.get(
+  '/imagePlaylist/:key',
+  async (request: Request, response: Response) => {
+    const { key } = request.params;
+    // console.log('/imagePlaylist/:key', key);
+    response.json(playlistTable.images[key].playlist);
+  }
+);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-server.post('/imagePlaylist', async (request: any, response: any) => {
+server.post('/imagePlaylist', async (request: Request, response: Response) => {
   const timestamp = Date.now();
-  const { list, title }: PlaylistProps = request.body;
+  const { playlist, title }: PlaylistProps = request.body;
   playlistTable.images[timestamp] = {
-    list,
+    background: '#FFFFFF',
+    playlist,
     timestamp,
     title,
   };
@@ -197,17 +201,21 @@ server.post('/imagePlaylist', async (request: any, response: any) => {
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-server.get('/videoPlaylist/:key', async (request: any, response: any) => {
-  const { key } = request.params;
-  response.json(playlistTable.videos[key].list);
-});
+server.get(
+  '/videoPlaylist/:key',
+  async (request: Request, response: Response) => {
+    const { key } = request.params;
+    response.json(playlistTable.videos[key].playlist);
+  }
+);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-server.post('/videoPlaylist', async (request: any, response: any) => {
+server.post('/videoPlaylist', async (request: Request, response: Response) => {
   const timestamp = Date.now();
-  const { list, title }: PlaylistProps = request.body;
+  const { playlist, title }: PlaylistProps = request.body;
   playlistTable.videos[timestamp] = {
-    list,
+    background: '#FFFFFF',
+    playlist,
     timestamp,
     title,
   };
@@ -282,7 +290,7 @@ const playSlideshow = (list: string, width: number, height: number) => {
       },
     });
     singleWindows[list].loadURL(
-      `file://${__dirname}/index.html?view=Slideshow&list=${list}`
+      `file://${__dirname}/index.html?view=Slideshow&timestamp=${list}`
     );
     singleWindows[list].focus();
     singleWindows[list].on('close', () => {
@@ -298,8 +306,8 @@ ipcMain.on(
   }
 );
 
-ipcMain.on('loadImagePlaylist', (_: IpcMainEvent, playlist: string) => {
-  if (playlist) {
+ipcMain.on('loadImagePlaylist', (_: IpcMainEvent, timestamp: string) => {
+  if (timestamp) {
     console.log('Add support for recently opened items');
   } else {
     dialog
@@ -336,7 +344,7 @@ const playVideoMulti = (list: string, width: number, height: number) => {
       },
     });
     singleWindows[list].loadURL(
-      `file://${__dirname}/index.html?view=VideoMulti&list=${list}`
+      `file://${__dirname}/index.html?view=VideoMulti&timestamp=${list}`
     );
     singleWindows[list].focus();
     singleWindows[list].on('close', () => {
@@ -352,8 +360,8 @@ ipcMain.on(
   }
 );
 
-ipcMain.on('loadVideoPlaylist', (_: IpcMainEvent, playlist: string) => {
-  if (playlist) {
+ipcMain.on('loadVideoPlaylist', (_: IpcMainEvent, timestamp: string) => {
+  if (timestamp) {
     console.log('Add support for recently opened items');
   } else {
     dialog

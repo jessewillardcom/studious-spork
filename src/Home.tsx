@@ -51,9 +51,9 @@ const MultiMedia = () => {
     ipcRenderer.send('loadVideoPlaylist');
   };
 
-  const postPlaylist = async (list: string[], endpoint: string) => {
+  const postPlaylist = async (playlist: string[], endpoint: string) => {
     const request = {
-      list,
+      playlist,
       title: '',
     };
     const response = await fetch(`${SERVER}${endpoint}`, {

@@ -97,7 +97,7 @@ export default function Slideshow({ timestamp }: SlideshowProps) {
 
   const savePlaylist = () => {
     ipcRenderer.send('saveImagePlaylist', {
-      list: imageList,
+      playlist: imageList,
       timestamp,
       title: fileName?.current?.value || timestamp,
     });

@@ -4,7 +4,8 @@ export interface MultimediaPlaylists {
 }
 
 export interface PlaylistProps {
-  list: string[];
+  background: string;
+  playlist: string[];
   timestamp: number;
   title: string;
 }
