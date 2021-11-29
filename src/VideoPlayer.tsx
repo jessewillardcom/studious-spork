@@ -242,7 +242,7 @@ export default function VideoPlayer({ timestamp }: VideoPlayerProps) {
             </button>
           </div>
         </div>
-        <div id="videLooping" style={{ display: modal ? 'flex' : 'none' }}>
+        <div id="videoLooping" style={{ display: modal ? 'flex' : 'none' }}>
           {looping && <strong>Repeat stopped</strong>}
           {!looping && <strong>Looping active</strong>}
         </div>

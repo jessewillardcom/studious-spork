@@ -36,6 +36,7 @@ import {
 } from './_interfaces/main.interface';
 import { EXPRESS_ADDRESS, EXPRESS_PORT } from './constants';
 import MenuBuilder from './menu';
+import { safeFileRename } from './helpers/File';
 
 // Create playlists directory if one doesn't already exist
 // const PLAYLIST_ROOT = path.resolve(__dirname, 'playlists');
@@ -107,45 +108,66 @@ const recentPlaylists = (type: string) => {
 
 console.log('---------------------------------------');
 
-const RECENT_PLAYLISTS = 10;
+const RECENT_PLAYLISTS_COUNT = 10;
+const playlistTable: MultimediaPlaylists = {
+  images: {},
+  videos: {},
+};
+
 const imageRecentLists = recentPlaylists('images')
-  .filter((_, n) => n < RECENT_PLAYLISTS)
+  .filter((_, n) => n < RECENT_PLAYLISTS_COUNT)
   .map((fileName) => {
     const fileContents: Buffer = fs.readFileSync(
       `${imagesPlaylistDir}${fileName}`
     );
-    const { list, timestamp, title } = JSON.parse(fileContents.toString());
+    const { background, playlist, timestamp, title } = JSON.parse(
+      fileContents.toString()
+    );
     return {
-      list,
+      background,
+      playlist,
       timestamp,
       title,
     };
   });
 
-imageRecentLists.forEach((recent) => {
-  console.log(recent.list);
-  console.log(recent.title);
-  console.log(recent.timestamp);
+imageRecentLists.forEach(({ background, playlist, title, timestamp }) => {
+  console.log('imageRecentLists >>', background, playlist, title, timestamp);
+  /*
+  playlistTable.images[timestamp] = {
+    background,
+    playlist,
+    timestamp,
+    title,
+  };
+  */
 });
 
 const videoRecentLists = recentPlaylists('videos')
-  .filter((_, n) => n < RECENT_PLAYLISTS)
+  .filter((_, n) => n < RECENT_PLAYLISTS_COUNT)
   .map((fileName) => {
     const fileContents: Buffer = fs.readFileSync(
       `${videosPlaylistDir}${fileName}`
     );
-    const { list, timestamp, title } = JSON.parse(fileContents.toString());
+    const { background, playlist, timestamp, title } = JSON.parse(
+      fileContents.toString()
+    );
     return {
-      list,
+      background,
+      playlist,
       timestamp,
       title,
     };
   });
 
-videoRecentLists.forEach((recent) => {
-  console.log(recent.list);
-  console.log(recent.title);
-  console.log(recent.timestamp);
+videoRecentLists.forEach(({ background, playlist, title, timestamp }) => {
+  console.log('videoRecentLists >>', background, playlist, title, timestamp);
+  playlistTable.videos[timestamp] = {
+    background,
+    playlist,
+    timestamp,
+    title,
+  };
 });
 
 const server = express();
@@ -156,12 +178,6 @@ server.use(
     extended: true,
   })
 );
-
-// In memory, rather than persist every played list to disk
-const playlistTable: MultimediaPlaylists = {
-  images: {},
-  videos: {},
-};
 
 const tracePlaylist = () => {
   Object.keys(playlistTable.images).forEach((timestamp) => {
@@ -200,6 +216,11 @@ server.post('/imagePlaylist', async (request: Request, response: Response) => {
   });
 });
 
+server.get('/recentPlaylists', async (_: Request, response: Response) => {
+  console.log('>>>>>>', JSON.stringify(playlistTable));
+  response.json(playlistTable);
+});
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 server.get(
   '/videoPlaylist/:key',
@@ -228,7 +249,7 @@ server.post('/videoPlaylist', async (request: Request, response: Response) => {
 });
 
 server.listen(EXPRESS_PORT, EXPRESS_ADDRESS, () => {
-  console.log('>>> Web server started >>', HOME);
+  //  console.log('>>> Web server started >>', HOME);
 });
 // :TODO:: Allow served folder to be changed
 // server.close() //<---Shut down then restart server
@@ -401,7 +422,10 @@ const savePlaylist = (directory: string, playlist: Record<string, string>) => {
     })
     .then((file) => {
       if (!file.canceled)
-        fs.writeFileSync(String(file.filePath), JSON.stringify(playlist));
+        fs.writeFileSync(
+          safeFileRename(String(file.filePath)),
+          JSON.stringify(playlist)
+        );
     })
     .catch((error) => {
       console.log(error.message);

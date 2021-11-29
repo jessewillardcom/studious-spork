@@ -1,7 +1,10 @@
+/* eslint-disable react/no-array-index-key */
+/* eslint-disable promise/always-return */
 /* eslint-disable react-hooks/exhaustive-deps */
+import { ipcRenderer } from 'electron';
 import React, { useEffect, useRef, useState } from 'react';
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
-import { ipcRenderer } from 'electron';
+import { PlaylistProps } from './_interfaces/main.interface';
 import { SERVER } from './constants';
 import './App.global.css';
 
@@ -11,10 +14,20 @@ const USER_FOLDER = QUERY_STRING.get('home') ?? '';
 const MultiMedia = () => {
   const [fileType, setFileType] = useState('');
   const filePicker = useRef<HTMLInputElement | never>(null);
+
   const imageContainer = useRef<HTMLDivElement | never>(null);
-  const videoContainer = useRef<HTMLDivElement | never>(null);
+  const imageSelectBox = useRef<HTMLSelectElement | never>(null);
   const [imageList, setImageList] = useState<string[] | never[]>([]);
+  const [imagePlaylists, setImagePlaylists] = useState<
+    Record<string, PlaylistProps>
+  >({});
+
+  const videoContainer = useRef<HTMLDivElement | never>(null);
+  const videoSelectBox = useRef<HTMLSelectElement | never>(null);
   const [videoList, setVideoList] = useState<string[] | never[]>([]);
+  const [videoPlaylists, setVideoPlaylists] = useState<
+    Record<string, PlaylistProps>
+  >({});
 
   const selectFiles = (type: string) => {
     if (filePicker?.current) {
@@ -155,6 +168,13 @@ const MultiMedia = () => {
   }, [videoList]);
 
   useEffect(() => {
+    fetch(`${SERVER}/recentPlaylists`)
+      .then((response) => response.json())
+      .then(({ images, videos }) => {
+        setImagePlaylists(images);
+        setVideoPlaylists(videos);
+      })
+      .catch(() => {});
     return () => {
       removeImageNodes();
       removeVideoNodes();
@@ -175,6 +195,18 @@ const MultiMedia = () => {
           >
             Open Video Playlist
           </button>
+          {Object.keys(videoPlaylists).length > 0 && (
+            <select ref={imageSelectBox}>
+              <option key="videos_0" value="-1">
+                [Select playlist to play]
+              </option>
+              {Object.keys(videoPlaylists).map((key, n) => (
+                <option key={`videos_${n}`} value={key}>
+                  {videoPlaylists[key].title}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
         <div className="column">
           <button type="button" onClick={() => selectFiles('image')}>
@@ -187,6 +219,18 @@ const MultiMedia = () => {
           >
             Open Image Playlist
           </button>
+          {Object.keys(videoPlaylists).length > 0 && (
+            <select ref={videoSelectBox}>
+              <option key="images_0" value="-1">
+                [Select playlist to play]
+              </option>
+              {Object.keys(imagePlaylists).map((key, n) => (
+                <option key={`images_${n + 1}`} value={key}>
+                  {imagePlaylists[key].title}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
       <div id="imageHidden" className="hidden" ref={imageContainer} />

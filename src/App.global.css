@@ -79,7 +79,7 @@ a:hover {
   display: flex;
 }
 div.column {
-  flex-direction: row;
+  flex-direction: column;
   display: flex;
   flex: 1;
 }
@@ -185,7 +185,7 @@ button.save {
 }
 
 #intervalTiming,
-#videLooping {
+#videoLooping {
   justify-content: center;
   pointer-events: none;
   align-items: center;
@@ -199,7 +199,7 @@ button.save {
 }
 
 #intervalTiming strong,
-#videLooping strong {
+#videoLooping strong {
   display: block;
   opacity: 0.5;
   padding: 8px;
