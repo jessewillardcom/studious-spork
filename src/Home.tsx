@@ -18,14 +18,12 @@ const MultiMedia = () => {
   const filePicker = useRef<HTMLInputElement | never>(null);
 
   const imageContainer = useRef<HTMLDivElement | never>(null);
-  const imageSelectBox = useRef<HTMLSelectElement | never>(null);
   const [imageList, setImageList] = useState<string[] | never[]>([]);
   const [imagePlaylists, setImagePlaylists] = useState<
     Record<string, PlaylistProps>
   >({});
 
   const videoContainer = useRef<HTMLDivElement | never>(null);
-  const videoSelectBox = useRef<HTMLSelectElement | never>(null);
   const [videoList, setVideoList] = useState<string[] | never[]>([]);
   const [videoPlaylists, setVideoPlaylists] = useState<
     Record<string, PlaylistProps>
@@ -171,17 +169,17 @@ const MultiMedia = () => {
 
   // Select image and videos from an existing playlist
 
-  const playSelectedImage = (timestamp: string) => {
-    //  console.log('playSelectedImageList >>', imagePlaylists[timestamp]);
-    ipcRenderer.send('playSlideshow', {
-      list: timestamp,
-      width: 640,
-      height: 480,
-    });
+  const playSelectedImages = (timestamp: string) => {
+    if (timestamp) {
+      ipcRenderer.send('playSlideshow', {
+        list: timestamp,
+        width: 640,
+        height: 480,
+      });
+    }
   };
 
-  const playSelectedVideo = (timestamp: string) => {
-    //  console.log('playSelectedVideoList >>', videoPlaylists[timestamp]);
+  const playSelectedVideos = (timestamp: string) => {
     if (timestamp) {
       ipcRenderer.send('playVideoMulti', {
         list: timestamp,
@@ -222,7 +220,7 @@ const MultiMedia = () => {
           {Object.keys(videoPlaylists).map((key, n) => (
             <a
               key={`videos_${n}`}
-              onClick={() => playSelectedVideo(key)}
+              onClick={() => playSelectedVideos(key)}
               onKeyPress={() => {}}
             >
               {videoPlaylists[key].title}
@@ -243,7 +241,7 @@ const MultiMedia = () => {
           {Object.keys(imagePlaylists).map((key, n) => (
             <a
               key={`videos_${n}`}
-              onClick={() => playSelectedVideo(key)}
+              onClick={() => playSelectedImages(key)}
               onKeyPress={() => {}}
             >
               {imagePlaylists[key].title}

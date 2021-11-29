@@ -264,6 +264,7 @@ export default function Slideshow({ background, timestamp }: SlideshowProps) {
   }, [imageTags]);
 
   useEffect(() => {
+    bgColor!.current!.value = hex;
     document.body.addEventListener('mouseleave', () => {
       clearTimeout(hideMenuTimeout);
       clearTimeout(mouseMoveDebounce);
