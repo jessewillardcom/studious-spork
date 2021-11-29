@@ -167,6 +167,28 @@ const MultiMedia = () => {
     if (videoList.length > 0) playVideos();
   }, [videoList]);
 
+  // Select image and videos from an existing playlist
+
+  const playSelectedImage = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const timestamp = event.currentTarget.value;
+    //  console.log('playSelectedImageList >>', imagePlaylists[timestamp]);
+    ipcRenderer.send('playSlideshow', {
+      list: timestamp,
+      width: 640,
+      height: 480,
+    });
+  };
+
+  const playSelectedVideo = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const timestamp = event.target.value;
+    //  console.log('playSelectedVideoList >>', videoPlaylists[timestamp]);
+    ipcRenderer.send('playVideoMulti', {
+      list: timestamp,
+      width: 640,
+      height: 480,
+    });
+  };
+
   useEffect(() => {
     fetch(`${SERVER}/recentPlaylists`)
       .then((response) => response.json())
@@ -196,7 +218,7 @@ const MultiMedia = () => {
             Open Video Playlist
           </button>
           {Object.keys(videoPlaylists).length > 0 && (
-            <select ref={imageSelectBox}>
+            <select ref={imageSelectBox} onChange={playSelectedVideo}>
               <option key="videos_0" value="-1">
                 [Select playlist to play]
               </option>
@@ -220,7 +242,7 @@ const MultiMedia = () => {
             Open Image Playlist
           </button>
           {Object.keys(videoPlaylists).length > 0 && (
-            <select ref={videoSelectBox}>
+            <select ref={videoSelectBox} onChange={playSelectedImage}>
               <option key="images_0" value="-1">
                 [Select playlist to play]
               </option>
