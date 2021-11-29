@@ -146,42 +146,57 @@ video:focus {
   left: 0;
 }
 
+#popupWindowMenu .popup-window-layout {
+  margin: 0 0 1.25rem 0;
+  background-color: black;
+  justify-content: space-between;
+  align-content: flex-start;
+  position: relative;
+  display: flex;
+  top: 0;
+}
+
 #popupWindowMenu button {
   cursor: pointer;
   font-weight: 700;
-  margin: 5px;
+  margin: 0.5rem 0 0 0;
   padding: 10px 15px;
   color: rgba(255, 255, 255, 0.8);
   background-color: transparent;
 }
 
-button.close {
+#popupWindowMenu button.close {
   width: 60px;
 }
 
-button.close,
-button.save {
+#popupWindowMenu button.close,
+#popupWindowMenu button.save {
   filter: drop-shadow(2px 2px 12px #000000);
   position: relative;
   height: 3rem;
   top: 0;
 }
 
+#popupWindowMenu .popup-input-fields {
+  display: flex;
+  margin: 0;
+  width: 80%;
+}
+
 #popupWindowMenu input {
   background-color: rgba(255, 255, 255, 0.8);
-  margin: 1rem 0 0 0.5rem;
+  margin: 1rem 0 0 0;
   text-align: center;
   font-weight: 700;
   height: 1.5rem;
-  width: 60%;
 }
 
-#popupWindowMenu .popup-window-layout {
-  justify-content: space-between;
-  align-content: flex-start;
-  position: relative;
-  display: flex;
-  top: 0;
+#popupWindowMenu input.title {
+  flex: 2 0 0;
+}
+
+#popupWindowMenu input.color {
+  flex: 0 0 0;
 }
 
 #intervalTiming,

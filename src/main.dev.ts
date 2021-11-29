@@ -28,15 +28,15 @@ import log from 'electron-log';
 import { autoUpdater } from 'electron-updater';
 import express, { Request, Response } from 'express';
 import bodyParser from 'body-parser';
+import MenuBuilder from './menu';
 import {
   MultimediaPlaylists,
   MultiVideoPlayer,
   PlaylistProps,
   SlideshowPlayer,
 } from './_interfaces/main.interface';
+import { safeFileRename } from './helpers/file';
 import { EXPRESS_ADDRESS, EXPRESS_PORT } from './constants';
-import MenuBuilder from './menu';
-import { safeFileRename } from './helpers/File';
 
 // Create playlists directory if one doesn't already exist
 // const PLAYLIST_ROOT = path.resolve(__dirname, 'playlists');

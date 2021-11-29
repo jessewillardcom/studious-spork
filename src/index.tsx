@@ -6,16 +6,17 @@ import Slideshow from './Slideshow';
 import Home from './Home';
 
 const queryString = new URLSearchParams(window.location.search);
+const background = queryString.get('background') ?? '000000';
 const timestamp = queryString.get('timestamp') ?? '';
 const view = queryString.get('view');
 
 switch (view) {
   case 'Slideshow': {
-    render(<Slideshow timestamp={timestamp} />, document.getElementById('root'));
+    render(<Slideshow background={background} timestamp={timestamp} />, document.getElementById('root'));
     break;
   }
   case 'VideoMulti': {
-    render(<VideoPlayer timestamp={timestamp} />, document.getElementById('root'));
+    render(<VideoPlayer background={background} timestamp={timestamp} />, document.getElementById('root'));
     break;
   }
   default:

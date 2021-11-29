@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable no-console */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { MouseEvent, useEffect, useRef, useState } from 'react';
@@ -15,14 +16,17 @@ const HIDE_MENU_TIMEOUT = 2500;
 const HIDE_MODAL_TIMEOUT = 500;
 
 interface SlideshowProps {
+  background: string;
   timestamp: string;
 }
 
-export default function Slideshow({ timestamp }: SlideshowProps) {
+export default function Slideshow({ background, timestamp }: SlideshowProps) {
   const imageContainer = useRef<HTMLDivElement | never>(null);
   const imagePlayer = useRef<HTMLDivElement | never>(null);
   const fileName = useRef<HTMLInputElement | never>(null);
+  const bgColor = useRef<HTMLInputElement | never>(null);
   const [titleFocus, setTitleFocus] = useState(false);
+  const [hex, setHex] = useState(`#${background}`);
 
   const closeWindow = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -146,11 +150,27 @@ export default function Slideshow({ timestamp }: SlideshowProps) {
     }
   };
 
-  const filenameBlur = () => {
+  const titleInputBlur = () => {
     setTitleFocus(false);
     setLooping(true);
   };
-  const filenameFocus = () => {
+  const titleInputFocus = () => {
+    setTitleFocus(true);
+    clearTimeout(hideMenuTimeout);
+    clearTimeout(mouseMoveDebounce);
+    setLooping(false);
+  };
+
+  const bgColorBlur = () => {
+    setTitleFocus(false);
+    setLooping(true);
+    if (bgColor!.current!.value.match('^#(?:[0-9a-fA-F]{3}){1,2}$') == null) {
+      bgColor.current!.value = `#${background}`;
+    } else {
+      setHex(bgColor!.current!.value);
+    }
+  };
+  const bgColorFocus = () => {
     setTitleFocus(true);
     clearTimeout(hideMenuTimeout);
     clearTimeout(mouseMoveDebounce);
@@ -270,9 +290,9 @@ export default function Slideshow({ timestamp }: SlideshowProps) {
         id="imageContainer"
         ref={imageContainer}
         role="button"
-        onClick={() => false}
         onKeyUp={keyControls}
         tabIndex={0}
+        style={{ backgroundColor: hex }}
       >
         <div id="popupWindowMenu" style={{ display: menu ? 'block' : 'none' }}>
           <div className="popup-window-layout">
@@ -284,13 +304,24 @@ export default function Slideshow({ timestamp }: SlideshowProps) {
             >
               X
             </button>
-            <input
-              type="text"
-              ref={fileName}
-              onMouseMove={(e) => e.stopPropagation()}
-              onFocus={filenameFocus}
-              onBlur={filenameBlur}
-            />
+            <div className="popup-input-fields">
+              <input
+                type="text"
+                ref={fileName}
+                className="title"
+                onMouseMove={(e) => e.stopPropagation()}
+                onFocus={titleInputFocus}
+                onBlur={titleInputBlur}
+              />
+              <input
+                type="text"
+                ref={bgColor}
+                className="color"
+                onMouseMove={(e) => e.stopPropagation()}
+                onFocus={bgColorFocus}
+                onBlur={bgColorBlur}
+              />
+            </div>
             <button
               className="save"
               type="button"

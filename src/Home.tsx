@@ -1,3 +1,5 @@
+/* eslint-disable jsx-a11y/anchor-is-valid */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable promise/always-return */
 /* eslint-disable react-hooks/exhaustive-deps */
@@ -169,8 +171,7 @@ const MultiMedia = () => {
 
   // Select image and videos from an existing playlist
 
-  const playSelectedImage = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const timestamp = event.currentTarget.value;
+  const playSelectedImage = (timestamp: string) => {
     //  console.log('playSelectedImageList >>', imagePlaylists[timestamp]);
     ipcRenderer.send('playSlideshow', {
       list: timestamp,
@@ -179,14 +180,15 @@ const MultiMedia = () => {
     });
   };
 
-  const playSelectedVideo = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const timestamp = event.target.value;
+  const playSelectedVideo = (timestamp: string) => {
     //  console.log('playSelectedVideoList >>', videoPlaylists[timestamp]);
-    ipcRenderer.send('playVideoMulti', {
-      list: timestamp,
-      width: 640,
-      height: 480,
-    });
+    if (timestamp) {
+      ipcRenderer.send('playVideoMulti', {
+        list: timestamp,
+        width: 640,
+        height: 480,
+      });
+    }
   };
 
   useEffect(() => {
@@ -217,18 +219,15 @@ const MultiMedia = () => {
           >
             Open Video Playlist
           </button>
-          {Object.keys(videoPlaylists).length > 0 && (
-            <select ref={imageSelectBox} onChange={playSelectedVideo}>
-              <option key="videos_0" value="-1">
-                [Select playlist to play]
-              </option>
-              {Object.keys(videoPlaylists).map((key, n) => (
-                <option key={`videos_${n}`} value={key}>
-                  {videoPlaylists[key].title}
-                </option>
-              ))}
-            </select>
-          )}
+          {Object.keys(videoPlaylists).map((key, n) => (
+            <a
+              key={`videos_${n}`}
+              onClick={() => playSelectedVideo(key)}
+              onKeyPress={() => {}}
+            >
+              {videoPlaylists[key].title}
+            </a>
+          ))}
         </div>
         <div className="column">
           <button type="button" onClick={() => selectFiles('image')}>
@@ -241,18 +240,15 @@ const MultiMedia = () => {
           >
             Open Image Playlist
           </button>
-          {Object.keys(videoPlaylists).length > 0 && (
-            <select ref={videoSelectBox} onChange={playSelectedImage}>
-              <option key="images_0" value="-1">
-                [Select playlist to play]
-              </option>
-              {Object.keys(imagePlaylists).map((key, n) => (
-                <option key={`images_${n + 1}`} value={key}>
-                  {imagePlaylists[key].title}
-                </option>
-              ))}
-            </select>
-          )}
+          {Object.keys(imagePlaylists).map((key, n) => (
+            <a
+              key={`videos_${n}`}
+              onClick={() => playSelectedVideo(key)}
+              onKeyPress={() => {}}
+            >
+              {imagePlaylists[key].title}
+            </a>
+          ))}
         </div>
       </div>
       <div id="imageHidden" className="hidden" ref={imageContainer} />

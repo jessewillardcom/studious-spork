@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable no-console */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/jsx-props-no-spreading */
@@ -17,14 +18,20 @@ const videoAttributes = {
 };
 
 interface VideoPlayerProps {
+  background: string;
   timestamp: string;
 }
 
-export default function VideoPlayer({ timestamp }: VideoPlayerProps) {
+export default function VideoPlayer({
+  background,
+  timestamp,
+}: VideoPlayerProps) {
   const videoContainer = useRef<HTMLDivElement | never>(null);
   const videoPlayer = useRef<HTMLVideoElement | never>(null);
   const fileName = useRef<HTMLInputElement | never>(null);
-  const [titleFocus, setTitleFocus] = useState(false);
+  const bgColor = useRef<HTMLInputElement | never>(null);
+  const [textFocus, setTextFocus] = useState(false);
+  const [hex, setHex] = useState(`#${background}`);
 
   const closeWindow = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -139,12 +146,28 @@ export default function VideoPlayer({ timestamp }: VideoPlayerProps) {
     showVideoModal();
   }, [looping]);
 
-  const filenameBlur = () => {
-    setTitleFocus(false);
+  const titleInputBlur = () => {
+    setTextFocus(false);
     videoPlayer?.current?.play();
   };
-  const filenameFocus = () => {
-    setTitleFocus(true);
+  const titleInputFocus = () => {
+    setTextFocus(true);
+    clearTimeout(hideMenuTimeout);
+    clearTimeout(mouseMoveDebounce);
+    videoPlayer?.current?.pause();
+  };
+
+  const bgColorBlur = () => {
+    setTextFocus(false);
+    videoPlayer?.current?.play();
+    if (bgColor!.current!.value.match('^#(?:[0-9a-fA-F]{3}){1,2}$') == null) {
+      bgColor.current!.value = `#${background}`;
+    } else {
+      setHex(bgColor!.current!.value);
+    }
+  };
+  const bgColorFocus = () => {
+    setTextFocus(true);
     clearTimeout(hideMenuTimeout);
     clearTimeout(mouseMoveDebounce);
     videoPlayer?.current?.pause();
@@ -152,7 +175,7 @@ export default function VideoPlayer({ timestamp }: VideoPlayerProps) {
 
   const keyControls = (e: React.KeyboardEvent<HTMLDivElement>) => {
     e.stopPropagation();
-    if (!titleFocus) {
+    if (!textFocus) {
       switch (e.keyCode) {
         case 13: {
           // console.log('ENTER');
@@ -186,6 +209,7 @@ export default function VideoPlayer({ timestamp }: VideoPlayerProps) {
   };
 
   useEffect(() => {
+    bgColor!.current!.value = hex;
     document.body.addEventListener('mouseleave', () => {
       clearTimeout(hideMenuTimeout);
       clearTimeout(mouseMoveDebounce);
@@ -214,6 +238,7 @@ export default function VideoPlayer({ timestamp }: VideoPlayerProps) {
         role="button"
         onKeyUp={keyControls}
         tabIndex={0}
+        style={{ backgroundColor: hex }}
       >
         <div id="popupWindowMenu" style={{ display: menu ? 'block' : 'none' }}>
           <div className="popup-window-layout">
@@ -225,13 +250,24 @@ export default function VideoPlayer({ timestamp }: VideoPlayerProps) {
             >
               X
             </button>
-            <input
-              type="text"
-              ref={fileName}
-              onMouseMove={(e) => e.stopPropagation()}
-              onFocus={filenameFocus}
-              onBlur={filenameBlur}
-            />
+            <div className="popup-input-fields">
+              <input
+                type="text"
+                ref={fileName}
+                className="title"
+                onMouseMove={(e) => e.stopPropagation()}
+                onFocus={titleInputFocus}
+                onBlur={titleInputBlur}
+              />
+              <input
+                type="text"
+                ref={bgColor}
+                className="color"
+                onMouseMove={(e) => e.stopPropagation()}
+                onFocus={bgColorFocus}
+                onBlur={bgColorBlur}
+              />
+            </div>
             <button
               className="save"
               type="button"
